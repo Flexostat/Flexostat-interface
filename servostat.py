@@ -1,25 +1,19 @@
 from controller import Controller
 from ConfigParser import SafeConfigParser
+from network import CTBasicServer
 import threading
 import serial
 import sys
 import traceback
 import time
 
+
+
 if __name__ == '__main__':
     #read parameters
     config = SafeConfigParser()
     config.read('config.ini')
     controller_params = dict(config.items('controller'))
-    #convert all keys to floats
-    #in retrospect, this was a mistake... but old sections of code rely on this
-    #and I don't want to refactor that code right now.
-#    for key in controller_params:
-#        if key == "controlfun":
-#            pass            
-#        else:
-#            controller_params[key] = float(controller_params[key])
-    
     port_names = dict(config.items('ports'))
     pump_params = dict(config.items('pump'))
     logs = dict(config.items('log'))
@@ -39,6 +33,12 @@ if __name__ == '__main__':
     cont = Controller(controller_params,logs,pump_params,
                                  cont_port, pump_port)
     
+    #setup up network configue port
+    def cb(cmd):
+        if 'list' in cmd:
+            return str(controller_params)
+    netserv = CTBasicServer(('',int(port_names['network'])),cb)
+    netserv.start()
     
     print 'num threads: ' + str(len(sys._current_frames().keys()))
     try:
