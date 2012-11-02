@@ -1,31 +1,54 @@
+from numpy import array
+
 class State:
+    """ The state variable for the control funcion
+    
+    This does not need to adhear to any proper interface although a
+    readable __str__() method is highly recommended to allow for debugging.
+    """
     def __init__(self):
         self.z = 0
     def __str__(self):
         return '%.4f' % self.z
 
 def computeControl(self,od,z,chamber=0,time=0.0):
-    period = self.cparams['odperiod']
-    if (time/60/60)%period > period/2:
-        setpt = self.cparams['altsetpoint']
-    else:
-        setpt = self.cparams['setpoint']
+    """  Controller function
     
+    self: self referrs to the main controller object that conains
+    all state such as the parameters file.  computeControl should never write
+    to any members of self
+    od: current od of the camber
+    chamber: the chamber number indexed from zero
+    time: the current time since start up. in seconds
+    
+    Returns: a tuple (list of dilution values for this chamber, state object)
+    
+    """
     if z == None:
         z = State()
     #calculate control
-    err_sig = 1000*(od-setpt)
-    z.z = z.z+err_sig*self.cparams['ki']
+    period = float(self.cparams['odperiod'])*60.0*60.0
+    if (time%period) > period/2.0:
+        setpoints = map(float,self.cparams['setpoint'].split())
+    else:
+        setpoints = map(float,self.cparams['altsetpoint'].split())
+    #for debug
+    #print "setpoints: "+ str(setpoints)+ "this: " + str(setpoints[chamber]),
+    #if chamber == 7:
+    #    print '' #new line
+    
+    err_sig = 1000*(od-setpoints[chamber])
+    z.z = z.z+err_sig*float(self.cparams['ki'])
     if z.z<0:
         z.z = 0
-    if z.z>self.cparams['maxdilution']:
-        z.z = self.cparams['maxdilution']
+    if z.z>float(self.cparams['maxdilution']):
+        z.z = float(self.cparams['maxdilution'])
     
-    u = z.z+err_sig*self.cparams['kp']
-    if u < self.cparams['mindilution']:
-        u = self.cparams['mindilution']
-    if u > self.cparams['maxdilution']:
-        u = self.cparams['maxdilution']
+    u = z.z+err_sig*float(self.cparams['kp'])
+    if u < float(self.cparams['mindilution']):
+        u = float(self.cparams['mindilution'])
+    if u > float(self.cparams['maxdilution']):
+        u = float(self.cparams['maxdilution'])
     u = int(u) # make sure u is an int
     
-    return (u,z)
+    return (array([u]),z)

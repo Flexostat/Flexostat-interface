@@ -1,4 +1,12 @@
 from numpy import array
+from random import randint
+
+#
+#
+#  Example mixture controller with random output.  
+#
+#
+#
 
 class State:
     """ The state variable for the control funcion
@@ -24,25 +32,7 @@ def computeControl(self,od,z,chamber=0,time=0.0):
     Returns: a tuple (list of dilution values for this chamber, state object)
     
     """
-    if z == None:
-        z = State()
-    #calculate control
-    setpoints = map(float,self.cparams['setpoint'].split())
-    #for debug
-#    print "setpoints: "+ str(setpoints)+ "this: " + str(setpoints[chamber])
+    u = [randint(10,150), randint(10,150)]
     
-    err_sig = 1000*(od-setpoints[chamber])
-    z.z = z.z+err_sig*float(self.cparams['ki'])
-    if z.z<0:
-        z.z = 0
-    if z.z>float(self.cparams['maxdilution']):
-        z.z = float(self.cparams['maxdilution'])
-    
-    u = z.z+err_sig*float(self.cparams['kp'])
-    if u < float(self.cparams['mindilution']):
-        u = float(self.cparams['mindilution'])
-    if u > float(self.cparams['maxdilution']):
-        u = float(self.cparams['maxdilution'])
-    u = int(u) # make sure u is an int
-    
-    return (array([u]),z)
+        
+    return (array(u),z)

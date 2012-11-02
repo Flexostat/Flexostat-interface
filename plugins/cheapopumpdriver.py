@@ -2,6 +2,7 @@ from time import sleep, time
 import threading
 #import wx
 import sys
+from numpy import array
 
 debug = False
 class Pump:
@@ -31,46 +32,63 @@ class Pump:
         
         print "pump init"
         #fully in
-        self._state = 0
+        self._state = array([0,0])
         with self.serpt.lock:
             self.serpt.write('pmv0;')
+            self.serpt.flush()
+            self.serpt.write('pmb0;')
+            self.serpt.flush()
         self._actionComplete = time()+4
         
         
     
     def _pumpGetResponse(self):
         return None
+    
+    def _chkStateBounds(self):
+        for ind in range(0,len(self._state)):
+            if self._state[ind] < 0:
+                self._state[ind] = 0
+            if self._state[ind] > 1600:
+                self._state[ind] = 1600
         
     def withdraw(self, volume):
         """  Instruct the pump to withrdraw volume units.
-        
+            
+            volume should be a numpy array of dimension 1
         """
-        volume = volume[0]
-        self._state = self._state+volume;
-        if self._state <0:
-            self._state = 0
-        if self._state > 1800:
-            self._state = 1800
-        cmd_str = 'pmv' + str(self._state) + ';'
-        with self.serpt.lock:
-            self.serpt.write(cmd_str)
-        wait_time = 4*volume/1800
-        if wait_time < 1:
-            wait_time = 1
-        self._actionComplete = time()+wait_time
+        
+        if volume.size <=2:
+            cmds = ['pma','pmb']
+        else:
+            return
+        #for old board compatability
+        if volume.size == 1:
+            cmds[0] = 'pmv'
+        for ind in range(0,volume.size):
+            self._state[ind] += volume[ind]
+            self._chkStateBounds()
+            cmd_str = cmds[ind] +str(self._state[ind]) + ';'
+            with self.serpt.lock:
+                self.serpt.write(cmd_str)
+            wait_time = max(4*volume[ind]/1600.,1)
+            self._actionComplete = time()+wait_time
+            
+            
             
     def dispense(self,volume):
         """  Instruct the pump to dispese volume units.
         
+            volume should be a numpy array of dimension 1
         """
-        self.withdraw([-v for v in volume])
+        self.withdraw(-volume)
         
     def waitForPumping(self):
         """ Block until pumping is done
         
         """
-        sleep_time = self._actionComplete - time()
-        if sleep_time >0:
+        while self._actionComplete>time():
+            sleep_time = self._actionComplete - time()
             sleep(sleep_time)
-        
+       
 
