@@ -5,10 +5,16 @@ class State:
         return '%.4f' % self.z
 
 def computeControl(self,od,z,time=0.0):
+    period = self.cparams['odperiod']
+    if (time/60/60)%period > period/2:
+        setpt = self.cparams['altsetpoint']
+    else:
+        setpt = self.cparams['setpoint']
+    
     if z == None:
         z = State()
     #calculate control
-    err_sig = 1000*(od-self.cparams['setpoint'])
+    err_sig = 1000*(od-setpt)
     z.z = z.z+err_sig*self.cparams['ki']
     if z.z<0:
         z.z = 0

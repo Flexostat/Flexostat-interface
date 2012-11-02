@@ -1,12 +1,17 @@
 from plotter import make_plot
 from webserver import MyHandler
 from BaseHTTPServer import HTTPServer
+import subprocess
 
 import time
 import threading
 import sys 
 
-UPDATE_PERIOD = 500
+UPDATE_PERIOD = 5*60
+
+scp_cmd = 'C:\Program Files (x86)\PuTTY\pscp.exe'
+log_file = '..\log.dat'
+remote_file = 'soslab@homer:public_html/turbidostat/log.dat'
 
 
 class the_plotter_thread(threading.Thread):
@@ -18,7 +23,9 @@ class the_plotter_thread(threading.Thread):
         print 'plotter started'
         while self.go:
             make_plot()
-            p = 0
+            pr = subprocess.Popen([scp_cmd, log_file, remote_file])
+            print 'uploading'
+            p=0
             while (self.go and p<UPDATE_PERIOD):
                 p=p+1
                 time.sleep(1)
