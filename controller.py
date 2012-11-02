@@ -8,6 +8,7 @@ import sys
 import serial
 import traceback
 import types
+from numpy import array,ones
 
 debug = False
 
@@ -86,8 +87,13 @@ class Controller:
                     with self.stdout_lock:
                         print 'Command Response: ' + line
             
-        else:   
-            data = map(int,line.split())
+        else:
+            try:
+                data = map(int,line.split())
+            except ValueError:
+                with self.stdout_lock:
+                    print "bad line: " + line
+                return
             #data line format: tx1 rx1 tx2 rx2 
             
             f = open(self.logfiles['odlog'],"a")
@@ -163,31 +169,30 @@ class Controller:
         #self.z = [q[1] for q in cont]
         #sepparate u lists from z
         contT = zip(*cont) #transpose cont values [([u1,u2],z),([u1,u2],z),...]
-        u = contT[0]
+        u = array(contT[0]).transpose() #u=array([[u1,u1,u1,...],[u2,u2,u2,...]])
         self.z = contT[1]
-        #make u a list of lists of dispense values
-        #ie u[0]is the disp value for pump 1
-        u = zip(*u)
-
+        
+        
+        #set excluded chambers to dilute at 11 units/chamber
         try:
             exf = open('exclude.txt','r')
             exvals = map(int,exf.readline().split())
             exf.close()
-            for uu in u:
-                for exx in exvals:
-                    uu[exx-1] = 11
+            for ee in exvals:
+                u[:,ee-1] = u[:,ee-1]+11
         except:
             pass
             
         #log events
-        f = open(self.logfiles['fulllog'],"a")
         s = str(int(round(time())))+" " \
             + str(map(round,ods,[4]*len(ods)))+" " \
             + '[' + ', '.join([str(Q) for Q in self.z])+"] " \
-            + str(u)
+            + str(u).replace('\n','')
+        f = open(self.logfiles['fulllog'],"a")
         f.write(s+'\n')
         f.close()
         
+        #handle dispensing
         with self.stdout_lock:
             print s
         
@@ -198,27 +203,29 @@ class Controller:
             print 'sel 0'
             sleep(0.5)
                 
-            self.pump.withdraw(map(lambda x:sum(x)+50,u))
+            self.pump.withdraw(u.sum(axis=1)+50)
             self.pump.waitForPumping()
-            self.pump.dispense([50]*len(u))
+            self.pump.dispense(ones((u.shape[0],1))*50)
             self.pump.waitForPumping()
             chamber_num = 1
             
             #dispvals gets a tuple of despense volumes for chamber_num
-            for dispvals in zip(*u):
+            for dispvals in u.transpose():
                     
                 selstr = "sel" + str(chamber_num) + ";"
                 #if we're moving from PV1 to PV2 then close first
                 #to prevent leaks into tube 5
+                #(ie to prevent multiple valves from being oupen at once)
                 if chamber_num == 5:
                     with self.serpt.lock:
                         self.serpt.write("clo;")
+                        self.serpt.flush()
                     sleep(2);
                 with self.serpt.lock:
                     self.serpt.write(selstr) #select chamber
                     self.serpt.flush()
-                sleep(2.0)  #for some reason one PV is very slow.  
                 print selstr #for debug
+                sleep(2.0)  #for some reason one PV is very slow.  
                                 
                 self.pump.dispense(dispvals)
                 self.pump.waitForPumping()
