@@ -14,11 +14,11 @@ if __name__ == '__main__':
     #convert all keys to floats
     #in retrospect, this was a mistake... but old sections of code rely on this
     #and I don't want to refactor that code right now.
-    for key in controller_params:
-        if key == "controlfun":
-            pass            
-        else:
-            controller_params[key] = float(controller_params[key])
+#    for key in controller_params:
+#        if key == "controlfun":
+#            pass            
+#        else:
+#            controller_params[key] = float(controller_params[key])
     
     port_names = dict(config.items('ports'))
     pump_params = dict(config.items('pump'))

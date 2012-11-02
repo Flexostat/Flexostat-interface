@@ -4,7 +4,7 @@ class State:
     def __str__(self):
         return '%.4f' % self.z
 
-def computeControl(self,od,z,time=0.0):
+def computeControl(self,od,z,chamber=0,time=0.0):
     period = self.cparams['odperiod']
     if (time/60/60)%period > period/2:
         setpt = self.cparams['altsetpoint']

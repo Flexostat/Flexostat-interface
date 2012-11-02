@@ -47,7 +47,7 @@ class Controller:
         
         #start the control-loop timer.
         self.start_time = time();
-        self.cont_timer = mytimer(cparams['period'],self.controlLoop)
+        self.cont_timer = mytimer(int(cparams['period']),self.controlLoop)
         self.cont_timer.start()
         
         #start the serial polling timer
@@ -106,6 +106,9 @@ class Controller:
             
     def computeOD(self,btx,brx,tx,rx):
         #calulate OD
+        if tx == 0:
+            return 0
+        
         blank = float(brx)/float(btx)
         measurement = (float(rx)/float(tx))
         od = log10(blank/measurement)*self.odcal
@@ -146,7 +149,7 @@ class Controller:
         #compute control
         ods = map(self.computeOD,self.tx_blank,self.rx_blank,
                             tx,rx)
-        cont = map(self.computeControl,ods, self.z,
+        cont = map(self.computeControl,ods, self.z,range(8),
                    [time()-self.start_time]*len(self.z))
         
         u = [q[0] for q in cont]
