@@ -1,5 +1,5 @@
 from mytimer import mytimer
-import pumpdriver
+#import pumpdriver
 from time import time, sleep
 from math import log10
 import threading
@@ -7,23 +7,24 @@ import threading
 import sys
 import serial
 import traceback
+import types
 
 debug = False
 
 
-class TurbidostatController:
+class Controller:
     
     def __init__(self,cparams,logfiles,pparams,cport,pport):
-        self.ser_lock = threading.Lock()
-        self.stdout_lock = threading.Lock()
+        pumpdriver = __import__('plugins.'+pparams['pumpdriver'],globals(),
+                                locals(),['Pump'],-1)
+        _temp = __import__('plugins.'+cparams['controlfun'],globals(),locals,
+                           ['computeControl'],-1)
+        self.computeControl = types.MethodType(_temp.computeControl,self)
+        self.ser_lock = cport.lock
+        self.stdout_lock = threading.RLock()
         
-        if pport != None:
-            self.pump = pumpdriver.Pump(cparams,logfiles,pparams,cport,pport)
-            self.odcal = 1
-        else:
-            self.pump = pumpdriver.cheapoPump(cparams,logfiles,
-                                              pparams,cport,self.ser_lock)
-            self.odcal = 1
+        self.pump = pumpdriver.Pump(cparams,logfiles,pparams,cport,pport)
+        self.odcal = 1
         
         self.logfiles = logfiles
         self.pparams = pparams
@@ -47,7 +48,6 @@ class TurbidostatController:
         self.ser_timer = mytimer(2, self.serialCheck)
         self.ser_timer.start()
         
-            
     def quit(self):
         self.cont_timer.stop()
         self.ser_timer.stop()
@@ -96,30 +96,12 @@ class TurbidostatController:
             self.tx_val = data[0::2]
             self.rx_val = data[1::2]
             
-    def computeControl(self,btx,brx,tx,rx,z):
-        if z == None:
-            z = 0
+    def computeOD(self,btx,brx,tx,rx):
         #calulate OD
         blank = float(brx)/float(btx)
         measurement = (float(rx)/float(tx))
         od = log10(blank/measurement)*self.odcal
-        #calculate control
-        err_sig = 1000*(od-self.cparams['setpoint'])
-        z = z+err_sig*self.cparams['ki']
-        if z<0:
-            z = 0
-        if z>self.cparams['maxdilution']:
-            z = self.cparams['maxdilution']
-        
-        u = z+err_sig*self.cparams['kp']
-        if u < self.cparams['mindilution']:
-            u = self.cparams['mindilution']
-        if u > self.cparams['maxdilution']:
-            u = self.cparams['maxdilution']
-        u = int(u) # make sure u is an int
-        
-        return (u,z,od)
-        
+        return od
         
     def controlLoop(self):
         #the plan
@@ -147,21 +129,30 @@ class TurbidostatController:
                     bfstring += str(j) + " "
                 bf.write(bfstring + "\n")
                  
-        #compute control    
-        cont = map(self.computeControl, self.tx_blank,self.rx_blank,
-                            self.tx_val,self.rx_val, self.z)
+        #compute control
+        ods = map(self.computeOD,self.tx_blank,self.rx_blank,
+                            self.tx_val,self.rx_val)
+        cont = map(self.computeControl,ods, self.z)
         
         u = [q[0] for q in cont]
         self.z = [q[1] for q in cont]
-        ods = [q[2] for q in cont]
+
+        
+        exf = open('exclude.txt','r')
+        exvals = map(int,exf.readline().split())
+        for exx in exvals:
+            u[exx-1] = 11
+        exf.close()
         
         #log events
+        #TODO: let z be a generic object and have instead log " blah %s"%z
         f = open(self.logfiles['fulllog'],"a")
         s = str(int(round(time())))+" " \
             + str(map(round,ods,[4]*len(ods)))+" " \
             + str(map(round,self.z,[4]*len(self.z)))+" "+str(u)
         f.write(s+'\n')
         f.close()
+        
         with self.stdout_lock:
             print s
         
@@ -169,14 +160,15 @@ class TurbidostatController:
             with self.ser_lock:
                 self.serpt.write("sel0;") #select media source
                 self.serpt.flush()
-            sleep(0.5)
             print 'sel 0'
+            sleep(0.5)
                 
             self.pump.withdraw(sum(u)+50)
             self.pump.waitForPumping()
             self.pump.dispense(50)
             self.pump.waitForPumping()
-            chamber_num = 1   
+            chamber_num = 1
+            
             for dispval in u:
                 selstr = "sel" + str(chamber_num) + ";"
                 #if we're moving from PV1 to PV2 then close first
@@ -189,7 +181,6 @@ class TurbidostatController:
                     self.serpt.write(selstr) #select chamber
                     self.serpt.flush()
                 sleep(2.0)  #for some reason one PV is very slow.  
-
                 print selstr #for debug
                 
                 self.pump.dispense(dispval)

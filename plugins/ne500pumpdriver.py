@@ -3,58 +3,9 @@ import threading
 #import wx
 import sys
 
-debug = False
-
-class cheapoPump:
-    
-    def __init__(self,cparams,logfiles,pparams,cport,c_lock):
-        self.pump_lock = c_lock
-        
-        self.logfiles = logfiles
-        self.pparams = pparams
-        self.cparams = cparams #all controller parameters live here
-        self.serpt = cport
-        
-        print "pump init"
-        #fully in
-        self._state = 0
-        with self.pump_lock:
-            cport.write('pmv0;')
-        self._actionComplete = time()+4
-        
-        
-    
-    def _pumpGetResponse(self):
-        return None
-        
-    def withdraw(self, volume):
-        self._state = self._state+volume;
-        if self._state <0:
-            self._state = 0
-        if self._state > 1800:
-            self._state = 1800
-        cmd_str = 'pmv' + str(self._state) + ';'
-        with self.pump_lock:
-            self.serpt.write(cmd_str)
-        wait_time = 4*volume/1800
-        if wait_time < 1:
-            wait_time = 1
-        self._actionComplete = time()+wait_time
-            
-    def dispense(self,volume):
-        self.withdraw(-volume)
-        
-    def waitForPumping(self):
-        sleep_time = self._actionComplete - time()
-        if sleep_time >0:
-            sleep(sleep_time)
-        
-
 class Pump:
     
     def __init__(self,cparams,logfiles,pparams,cport,pport):
-        self.pump_lock = threading.Lock()
-        
         self.logfiles = logfiles
         self.pparams = pparams
         self.cparams = cparams #all controller parameters live here
@@ -67,7 +18,7 @@ class Pump:
             
     def _initPump(self):
         print "pump init"
-        with self.pump_lock:
+        with self.pport.lock:
             self.pport.flushInput()
             #disable alarms
             s = "AL 0\r"
@@ -113,7 +64,7 @@ class Pump:
     def withdraw(self, volume):
         pump = self.pport
         u = str(int(volume))
-        with self.pump_lock:
+        with self.pport.lock:
             pump.write("DIR WDR\r")
             self._pumpGetResponse()
             pump.write("VOL"+u+"\r")
@@ -124,7 +75,7 @@ class Pump:
     def dispense(self,volume):
         pump = self.pport
         u = str(int(volume))
-        with self.pump_lock:
+        with self.pport.lock:
             pump.write("DIR INF\r")
             self._pumpGetResponse()
             pump.write("VOL"+u+"\r")
