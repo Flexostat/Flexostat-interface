@@ -4,10 +4,26 @@ import threading
 import sys
 
 debug = False
-#formally named cheapoPump
 class Pump:
+    """ The Pump driver
+    
+    """
     
     def __init__(self,cparams,logfiles,pparams,cport,pport):
+        """
+        cparams: a dictionary containing all controller parametrs from
+            config.ini
+        logfiles: deprecated
+        pparams: a dictionary containing all pump parameters from config.ini
+        cport: an open serial port object for controlling the controller board,
+            which may or may not have the pump attached depending on the
+            hardware.
+        pport: an open serial port object for controlling the pump.  may go
+            unused (eg cheapo pump)
+        
+        NOTE: cport and pport also have thread locks associated with them
+            (named .lock).  they should only be used with their lock.
+        """
         self.logfiles = logfiles
         self.pparams = pparams
         self.cparams = cparams #all controller parameters live here
@@ -26,6 +42,10 @@ class Pump:
         return None
         
     def withdraw(self, volume):
+        """  Instruct the pump to withrdraw volume units.
+        
+        """
+        volume = volume[0]
         self._state = self._state+volume;
         if self._state <0:
             self._state = 0
@@ -40,9 +60,15 @@ class Pump:
         self._actionComplete = time()+wait_time
             
     def dispense(self,volume):
-        self.withdraw(-volume)
+        """  Instruct the pump to dispese volume units.
+        
+        """
+        self.withdraw([-v for v in volume])
         
     def waitForPumping(self):
+        """ Block until pumping is done
+        
+        """
         sleep_time = self._actionComplete - time()
         if sleep_time >0:
             sleep(sleep_time)
