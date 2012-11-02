@@ -105,9 +105,16 @@ class Controller:
                 self.rx_val = data[1::2]
             
     def computeOD(self,btx,brx,tx,rx):
-        #calulate OD
-        if tx == 0:
+        """ Compute the OD from blank values and signal values
+        """
+        #if either value is 0 then return 0. Since the proper behavior in an 
+        # error is to do nothing.
+        # NOTE: later versions of this code should probably return None or
+        #       throw an exception since the error should probably be handled
+        #       by code higher up in the call stack.
+        if tx == 0 or rx ==0:
             return 0
+        
         
         blank = float(brx)/float(btx)
         measurement = (float(rx)/float(tx))
@@ -152,15 +159,23 @@ class Controller:
         cont = map(self.computeControl,ods, self.z,range(8),
                    [time()-self.start_time]*len(self.z))
         
-        u = [q[0] for q in cont]
-        self.z = [q[1] for q in cont]
+        #u = [q[0] for q in cont]
+        #self.z = [q[1] for q in cont]
+        #sepparate u lists from z
+        contT = zip(*cont) #transpose cont values [([u1,u2],z),([u1,u2],z),...]
+        u = contT[0]
+        self.z = contT[1]
+        #make u a list of lists of dispense values
+        #ie u[0]is the disp value for pump 1
+        u = zip(*u)
 
         try:
             exf = open('exclude.txt','r')
             exvals = map(int,exf.readline().split())
             exf.close()
-            for exx in exvals:
-                u[exx-1] = 11
+            for uu in u:
+                for exx in exvals:
+                    uu[exx-1] = 11
         except:
             pass
             
@@ -183,23 +198,21 @@ class Controller:
             print 'sel 0'
             sleep(0.5)
                 
-            self.pump.withdraw(sum(u)+50)
+            self.pump.withdraw(map(lambda x:sum(x)+50,u))
             self.pump.waitForPumping()
-            self.pump.dispense(50)
+            self.pump.dispense([50]*len(u))
             self.pump.waitForPumping()
             chamber_num = 1
             
-            for dispval in u:
-                if dispval < 1:
-                    chamber_num = chamber_num + 1
-                    continue
+            #dispvals gets a tuple of despense volumes for chamber_num
+            for dispvals in zip(*u):
                     
                 selstr = "sel" + str(chamber_num) + ";"
                 #if we're moving from PV1 to PV2 then close first
                 #to prevent leaks into tube 5
                 if chamber_num == 5:
                     with self.serpt.lock:
-                        self.serpt.write("clo;");
+                        self.serpt.write("clo;")
                     sleep(2);
                 with self.serpt.lock:
                     self.serpt.write(selstr) #select chamber
@@ -207,7 +220,7 @@ class Controller:
                 sleep(2.0)  #for some reason one PV is very slow.  
                 print selstr #for debug
                                 
-                self.pump.dispense(dispval)
+                self.pump.dispense(dispvals)
                 self.pump.waitForPumping()
                 
                 chamber_num = chamber_num + 1
