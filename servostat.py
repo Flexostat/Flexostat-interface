@@ -20,11 +20,13 @@ if __name__ == '__main__':
 
     #open ports
     cont_port = serial.Serial(port_names['controllerport'],
-                              int(controller_params['baudrate']),timeout = 4)
+                              int(controller_params['baudrate']),timeout = 4,
+                              writeTimeout = 1)
     cont_port.lock = threading.RLock()
     if (port_names['pumpport'].upper()!='NONE'):
         pump_port = serial.Serial(port_names['pumpport'],
-                                  int(pump_params['baudrate']),timeout = 1)
+                                  int(pump_params['baudrate']),timeout = 1,
+                                  writeTimeout = 1)
         pump_port.lock = threading.RLock()
     else:
         pump_port = None

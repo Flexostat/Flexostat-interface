@@ -35,9 +35,9 @@ class Pump:
         self._state = array([0,0])
         with self.serpt.lock:
             self.serpt.write('pmv0;')
-            self.serpt.flush()
+#            self.serpt.flush()
             self.serpt.write('pmb0;')
-            self.serpt.flush()
+#            self.serpt.flush()
         self._actionComplete = time()+4
         
         

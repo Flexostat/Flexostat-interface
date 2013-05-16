@@ -44,7 +44,7 @@ class Controller:
         self.z = []
         with self.serpt.lock:
             self.serpt.write("clo;")
-            self.serpt.flush()
+#            self.serpt.flush()
         
         #start the control-loop timer.
         self.start_time = time();
@@ -199,13 +199,14 @@ class Controller:
         try:
             with self.serpt.lock:
                 self.serpt.write("sel0;") #select media source
-                self.serpt.flush()
+#                self.serpt.flush()
             print 'sel 0'
             sleep(0.5)
                 
-            self.pump.withdraw(u.sum(axis=1)+50)
+            #TODO: parameterize antibacklash, now 100
+            self.pump.withdraw(u.sum(axis=1)+100)
             self.pump.waitForPumping()
-            self.pump.dispense(ones((u.shape[0],1))*50)
+            self.pump.dispense(ones((u.shape[0],1))*100)
             self.pump.waitForPumping()
             chamber_num = 1
             
@@ -219,11 +220,11 @@ class Controller:
                 if chamber_num == 5:
                     with self.serpt.lock:
                         self.serpt.write("clo;")
-                        self.serpt.flush()
+#                        self.serpt.flush()
                     sleep(2);
                 with self.serpt.lock:
                     self.serpt.write(selstr) #select chamber
-                    self.serpt.flush()
+#                    self.serpt.flush()
                 print selstr #for debug
                 sleep(2.0)  #for some reason one PV is very slow.  
                                 
@@ -234,7 +235,7 @@ class Controller:
             
             with self.serpt.lock:
                 self.serpt.write("clo;")
-                self.serpt.flush()
+#                self.serpt.flush()
             print 'clo'
                 
         except AttributeError:
