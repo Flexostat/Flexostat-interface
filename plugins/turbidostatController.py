@@ -7,7 +7,7 @@ class State:
     readable __str__() method is highly recommended to allow for debugging.
     """
     def __init__(self):
-        self.z = 0
+        self.z = 90
     def __str__(self):
         return '%.4f' % self.z
 

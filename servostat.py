@@ -6,10 +6,14 @@ import serial
 import sys
 import traceback
 import time
+import stacktracer
 
 
 
 if __name__ == '__main__':
+    #startup stacktracer for debuggin deadlock
+    stacktracer.trace_start("trace.html",interval=60,auto=True)
+    
     #read parameters
     config = SafeConfigParser()
     config.read('config.ini')

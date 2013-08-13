@@ -28,8 +28,8 @@ def computeControl(self,od,z,chamber=0,time=0.0):
     if z == None:
         z = State()
     #calculate control
-    T = [1,1,2,2,4,4,8,8]; #hz
-    setpoints = map(lambda T:0.5+0.25*math.sin(T*time/60/60*2*math.pi),T)
+    T = [1.5,1.5,3,3,6,6,12,12]; #hr
+    setpoints = map(lambda T:0.6+0.2*math.sin(time/60/60/T*2*math.pi),T)
     
     err_sig = 1000*(od-setpoints[chamber])
     z.z = z.z+err_sig*float(self.cparams['ki'])

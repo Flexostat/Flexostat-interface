@@ -22,7 +22,7 @@ class the_plotter_thread(threading.Thread):
     def run(self):
         print 'plotter started'
         while self.go:
-            make_plot()
+            #make_plot()
             pr = subprocess.Popen([scp_cmd, log_file, remote_file])
             print 'uploading'
             p=0

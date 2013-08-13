@@ -89,6 +89,10 @@ class Pump:
         """
         while self._actionComplete>time():
             sleep_time = self._actionComplete - time()
+            if sleep_time < 0:
+                sleep_time = 0.1
+            if sleep_time > 4:
+                sleep_time = 4
             sleep(sleep_time)
        
 
