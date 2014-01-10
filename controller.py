@@ -226,7 +226,7 @@ class Controller:
                     self.serpt.write(selstr) #select chamber
 #                    self.serpt.flush()
                 print selstr #for debug
-                sleep(2.0)  #for some reason one PV is very slow.  
+                sleep(1.0)  #give PV time to move, SPV needs ~100ms, servo 1s
                                 
                 self.pump.dispense(dispvals)
                 self.pump.waitForPumping()

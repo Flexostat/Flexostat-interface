@@ -3,7 +3,9 @@ import threading
 #import wx
 import sys
 
+
 class Pump:
+    debug = False
     
     def __init__(self,cparams,logfiles,pparams,cport,pport):
         self.logfiles = logfiles
