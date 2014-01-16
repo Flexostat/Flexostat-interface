@@ -1,41 +1,58 @@
+from numpy import array, ones
 from mytimer import mytimer
-#import pumpdriver
-from time import time, sleep
 from math import log10
+from time import time, sleep
+
 import threading
-#import wx
+import wx
 import sys
 import serial
 import traceback
 import types
-from numpy import array,ones
 
 debug = False
 
 
-class Controller:
+class Controller(object):
     
-    def __init__(self,cparams,logfiles,pparams,cport,pport):
-        pumpdriver = __import__('plugins.'+pparams['pumpdriver'],globals(),
-                                locals(),['Pump'],-1)
-        _temp = __import__('plugins.'+cparams['controlfun'],globals(),locals(),
-                           ['computeControl'],-1)
-        self.computeControl = types.MethodType(_temp.computeControl,self)
- #       self.ser_lock = cport.lock
+    def __init__(self, cparams, logfiles, pparams, cport, pport):
+    	"""Initialize the controller.
+    	
+    	Args:
+    		cparams: configuration parameters.
+    		logfiles: names of files to log to.
+    		pparams: pump parameters.
+    		cport: controller port.
+    		pport: pump port.
+    	"""
+    	pumpdriver_package = 'plugins.%s' % pparams['pumpdriver']
+    	control_function_package = 'plugins.%s' % cparams['controlfun']
+    	
+    	# Import pumpdriver
+        pumpdriver = __import__(pumpdriver_package, globals(), locals(),
+        						['Pump'], -1)
+                                
+        # Fetch the control computation, make it a method of self.
+        _temp = __import__(control_function_package, globals(), locals(),
+                           ['computeControl'], -1)
+        self.computeControl = types.MethodType(_temp.computeControl, self)
+        
+        #self.ser_lock = cport.lock
         self.stdout_lock = threading.RLock()
         
-        self.pump = pumpdriver.Pump(cparams,logfiles,pparams,cport,pport)
+        self.pump = pumpdriver.Pump(cparams, logfiles, pparams, cport, pport)
         self.odcal = 1
         
-        #data from config.ini
+        # Data from config.ini
         self.logfiles = logfiles
         self.pparams = pparams
-        self.cparams = cparams #all controller parameters live here
-        #serial ports
+        self.cparams = cparams # all controller parameters live here
+        
+        # Serial ports
         self.serpt = cport
         self.pport = pport
         
-        #This lock is for the following tx/rx raw values.
+        # This lock is for the following tx/rx raw values.
         self.OD_datalock = threading.RLock()
         self.tx_blank = []
         self.rx_blank = []
@@ -44,7 +61,7 @@ class Controller:
         self.z = []
         with self.serpt.lock:
             self.serpt.write("clo;")
-#            self.serpt.flush()
+            #self.serpt.flush()
         
         #start the control-loop timer.
         self.start_time = time();
@@ -210,10 +227,9 @@ class Controller:
             self.pump.waitForPumping()
             chamber_num = 1
             
-            #dispvals gets a tuple of despense volumes for chamber_num
+            # Dispvals gets a tuple of despense volumes for chamber_num
             for dispvals in u.transpose():
-                    
-                selstr = "sel" + str(chamber_num) + ";"
+                selstr = "sel%s;" % chamber_num
                 #if we're moving from PV1 to PV2 then close first
                 #to prevent leaks into tube 5
                 #(ie to prevent multiple valves from being oupen at once)
