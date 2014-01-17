@@ -1,20 +1,30 @@
-from time import time
-from time import sleep
+from time import time, sleep
+
+import sys
+import traceback
 import threading
-import sys, traceback
+
 
 class mytimer(threading.Thread):
-    """My timer class
-    calls callback once every period (in seconds).  callback takes no
-    arguements.  
-    Also, note that call backs are /periodic/ with the EXACT 
+    """Custom timer thread.
+    
+    Calls a callback once every period (in seconds).
+    Callback takes no arguements.  
+    
+    Also, note that callbacks are /periodic/ with the EXACT 
     average period of period. Unlike the threading.Timer class, clock jitter
     does NOT accumulate! 
     
-    Not sure what the smallest period possible is. 3 seconds is def good.
+    Not sure what the smallest period possible is. 3 seconds is definitely good.
     """
     
-    def __init__(self,period,callback):
+    def __init__(self, period, callback):
+    	"""Initialize the timer.
+    	
+    	Args:
+    		period: how frequently to call the callback (seconds).
+    		callback: zero-argument function to call.
+    	"""
         threading.Thread.__init__(self)
         self.starttime = 0
         self.p = period
@@ -27,13 +37,20 @@ class mytimer(threading.Thread):
     
     def stop(self):
         self.go = False
-        
 
     def _myround(self, x, base):
+    	"""Custom rounding method.
+    	
+    	Rounds "x" to a number that is divisible by "base".
+    	
+    	Args:
+    		x: value to round.
+    		base: return value should be divisble by base.
+    	"""
         return int(base * round(float(x)/base))
 
     def _mytime(self):
-        return time()-self.starttime
+        return time() - self.starttime
         
     def run(self):
         while self.go:
@@ -42,23 +59,25 @@ class mytimer(threading.Thread):
                 self.cb()
             except:
                 traceback.print_exc(file=sys.stdout)
-                f = open('errors.log',"a")
+                f = open('errors.log', 'a')
                 t = time()
-                f.write('===== time:' +str(t)+ '\n' )
+                f.write('===== time:' + str(t)+  '\n' )
                 traceback.print_exc(file=f)
                 f.close()
                 
-            #sleep until next_time
-            while self._mytime() < (next_time-0.01) and self.go:
-                dt = next_time-self._mytime()
-                if dt>1:
+            # Sleep until next_time
+            while self._mytime() < (next_time - 0.01) and self.go:
+                dt = next_time - self._mytime()
+                if dt > 1:
                     dt = 1
                 sleep(dt)
     
 
 def _callme():
-        print "tick: " + str(time())
+	"""Test callback."""
+	print "tick: ", str(time())
+    
     
 if __name__ == '__main__':
-    mt = mytimer(3,_callme)
+    mt = mytimer(3, _callme)
     mt.start()
