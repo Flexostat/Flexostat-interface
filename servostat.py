@@ -1,20 +1,21 @@
 from controller import Controller
 from ConfigParser import SafeConfigParser
 from network import CTBasicServer
-import threading
+
 import serial
-import sys
-import traceback
-import time
 import stacktracer
+import sys
+import threading
+import time
+import traceback
 
 
 
 if __name__ == '__main__':
-    #startup stacktracer for debuggin deadlock
+    # Startup stacktracer for debugging deadlock
     stacktracer.trace_start("trace.html",interval=60,auto=True)
     
-    #read parameters
+    # Read configuration from the config file
     config = SafeConfigParser()
     config.read('config.ini')
     controller_params = dict(config.items('controller'))
@@ -22,10 +23,11 @@ if __name__ == '__main__':
     pump_params = dict(config.items('pump'))
     logs = dict(config.items('log'))
 
-    #open ports
+    # Open ports
     cont_port = serial.Serial(port_names['controllerport'],
-                              int(controller_params['baudrate']),timeout = 4,
-                              writeTimeout = 1)
+                              int(controller_params['baudrate']),
+                              timeout=4,
+                              writeTimeout=1)
     cont_port.lock = threading.RLock()
     if (port_names['pumpport'].upper()!='NONE'):
         pump_port = serial.Serial(port_names['pumpport'],
@@ -35,18 +37,19 @@ if __name__ == '__main__':
     else:
         pump_port = None
     
-    #make the controler
-    cont = Controller(controller_params,logs,pump_params,
-                                 cont_port, pump_port)
+    # Make the controler
+    cont = Controller(controller_params, logs, pump_params,
+                      cont_port, pump_port)
     
-    #setup up network configue port
+    # Setup network configue port
     def cb(cmd):
         if 'list' in cmd:
             return str(controller_params)
-    netserv = CTBasicServer(('',int(port_names['network'])),cb)
+    netserv = CTBasicServer(('', int(port_names['network'])), cb)
     netserv.start()
     
     print 'num threads: ' + str(len(sys._current_frames().keys()))
+    # Run until a keyboard interrupt.
     try:
         while True:
             time.sleep(1)
