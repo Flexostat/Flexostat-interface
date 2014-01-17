@@ -21,8 +21,8 @@ class Controller(object):
     		cparams: configuration parameters.
     		logfiles: names of files to log to.
     		pparams: pump parameters.
-    		cport: controller port.
-    		pport: pump port.
+    		cport: controller serial port.
+    		pport: pump serial port.
     	"""
     	pumpdriver_package = 'plugins.%s' % pparams['pumpdriver']
     	control_function_package = 'plugins.%s' % cparams['controlfun']
@@ -39,8 +39,13 @@ class Controller(object):
         #self.ser_lock = cport.lock
         self.stdout_lock = threading.RLock()
         
+        # Calibration scaling the OD measurement to some reference value.
+        # i.e. scaling to values reported by a spec.
+        # TODO: This should be configurable.
+        self.odcal = 1  
+        
+        # Make the pump driver as appropriate.
         self.pump = pumpdriver.Pump(cparams, logfiles, pparams, cport, pport)
-        self.odcal = 1
         
         # Data from config.ini
         self.logfiles = logfiles
@@ -58,19 +63,20 @@ class Controller(object):
         self.rx_val = []
         self.tx_val = []
         self.z = []
+        
         with self.serpt.lock:
             self.serpt.write("clo;")
             #self.serpt.flush()
         
-        #start the control-loop timer.
-        self.start_time = time();
+        # Start the control-loop timer.
+        self.start_time = time()
         self.cont_timer = mytimer(int(cparams['period']),self.controlLoop)
         self.cont_timer.start()
         
-        #start the serial polling timer
+        # Start the serial polling timer, 2 second period
+        # TODO: make serial check period configurable?
         self.ser_timer = mytimer(2, self.serialCheck)
         self.ser_timer.start()
-        #return control to caller
         
     def quit(self):
         self.cont_timer.stop()
@@ -79,20 +85,24 @@ class Controller(object):
     def serialCheck(self):
         #if the serpt is uninitialized then do nothing.
         try:
-#no need for lock.  only thread that READS serpt
-#            with self.serpt.lock:
-            while (self.serpt.inWaiting() > 0):
+        	# No need for lock.
+        	# This runs in the only thread that READS serpt
+            ##with self.serpt.lock:
+            while self.serpt.inWaiting() > 0:
                 line = self.serpt.readline().strip()
                 self.parseline(line)
         except AttributeError:
             pass
         
-    def parseline(self,line):
-        
-        #reporting something back other than OD
+    def parseline(self, line):
+    	"""Parses a line from the serial port.
+    	
+    	Args:
+    		line: the received line.
+    	"""
+        # Reporting something back other than OD
         if line[0].isalpha():
-            
-            if line[0]=='s':
+            if line[0] == 's':
                 with self.stdout_lock:
                     print 'setpont: ' + line
 #                self.f.m_textCtrl_sp.ChangeValue(line.lstrip('s'))
@@ -105,31 +115,43 @@ class Controller(object):
             
         else:
             try:
-                data = map(int,line.split())
+                data = map(int, line.split())
             except ValueError:
                 with self.stdout_lock:
-                    print "bad line: " + line
+                    print 'bad line:', line
                 return
-            #data line format: tx1 rx1 tx2 rx2 
-            
-            f = open(self.logfiles['odlog'],"a")
-            s = str(int(round(time())))
-            for d in data:
-                s += " " + str(d)
-            f.write(s+'\n')
+                
+            # Data line format: tx1 rx1 tx2 rx2 
+            # TODO: can keep the logfiles open in append mode, no?
+            f = open(self.logfiles['odlog'], 'a')
+            time_str = str(int(round(time())))
+            s = '%s %s' % (s, ' '.join(data))
+            f.write(s + '\n')
             f.close()
+            
             with self.stdout_lock:
                 print s
-            #should this be threadsafe?????
-            # yes.  it should be.
+             
+            # Store the reported data locally.
+            # Should this be threadsafe?????
+            # Yes. It should be.
             with self.OD_datalock:
                 self.tx_val = data[0::2]
                 self.rx_val = data[1::2]
             
-    def computeOD(self,btx,brx,tx,rx):
-        """ Compute the OD from blank values and signal values
+    def computeOD(self, btx, brx, tx, rx):
+        """Compute the OD from blank values and signal values.
+        
+        Args:
+        	btx: blank transmitted light value.
+        	brx: blank reflected light value.
+        	tx: current transmitted light value.
+        	rx: current reflected light value.
+        
+        Returns:
+        	Calculated optical density for the current values.
         """
-        #if either value is 0 then return 0. Since the proper behavior in an 
+        # If either value is 0 then return 0. Since the proper behavior in an 
         # error is to do nothing.
         # NOTE: later versions of this code should probably return None or
         #       throw an exception since the error should probably be handled
@@ -137,24 +159,26 @@ class Controller(object):
         if tx == 0 or rx ==0:
             return 0
         
-        
-        blank = float(brx)/float(btx)
-        measurement = (float(rx)/float(tx))
-        od = log10(blank/measurement)*self.odcal
+        blank = float(brx) / float(btx)
+        measurement = float(rx) / float(tx)
+        od = log10(blank/measurement) * self.odcal
         return od
         
     def controlLoop(self):
-        #the plan
-        #get OD
-        #if blanks == 0 then use this as blank
-        #compute control value
-        #do dilution (control valves and pumps)
+        # The plan
+        #  * get OD
+        #  *   if blanks are empty, then store a blank
+        #  * compute control value
+        #  * do dilution (control valves and pumps)
         with self.OD_datalock:
             tx = self.tx_val
             rx = self.rx_val
             
         if len(rx) == 0 or len(tx) == 0:
+        	# Have no data yet
             return
+        
+        # TODO: do we need to lock writing blanks?
         if len(self.tx_blank) == 0 or len(self.rx_blank) == 0:
             try:
                 bf = open('blank.dat','r')
