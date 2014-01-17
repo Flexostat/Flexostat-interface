@@ -14,7 +14,6 @@ debug = False
 
 
 class Controller(object):
-    
     def __init__(self, cparams, logfiles, pparams, cport, pport):
     	"""Initialize the controller.
     	
@@ -227,7 +226,7 @@ class Controller(object):
             self.pump.waitForPumping()
             chamber_num = 1
             
-            # Dispvals gets a tuple of despense volumes for chamber_num
+            # Dispvals gets a tuple of dispense volumes for chamber_num
             for dispvals in u.transpose():
                 selstr = "sel%s;" % chamber_num
                 #if we're moving from PV1 to PV2 then close first
