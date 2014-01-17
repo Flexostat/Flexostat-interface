@@ -57,6 +57,8 @@ class Controller(object):
         self.pport = pport
         
         # This lock is for the following tx/rx raw values.
+        # TODO: should the controller know the number of chambers
+        # in advance of measuring?
         self.OD_datalock = threading.RLock()
         self.tx_blank = []
         self.rx_blank = []
@@ -175,45 +177,47 @@ class Controller(object):
             rx = self.rx_val
             
         if len(rx) == 0 or len(tx) == 0:
-        	# Have no data yet
+        	# Have no measurements yet
             return
         
         # TODO: do we need to lock writing blanks?
         if len(self.tx_blank) == 0 or len(self.rx_blank) == 0:
             try:
-                bf = open('blank.dat','r')
+            	# TODO: Make this parsing a helper.
+                bf = open('blank.dat', 'r')
                 blank_values = map(int,bf.readline().split())
                 self.tx_blank = blank_values[0::2]
                 self.rx_blank = blank_values[1::2]
             except:
+            	# No blank.dat file. Use the most recent measurement.
                 self.rx_blank = rx
                 self.tx_blank = tx
-                bf = open('blank.dat','w')
-                #intrleave tx and rx  
-                flat_blank = [j for i in zip(self.tx_blank,self.rx_blank)
+                bf = open('blank.dat', 'w')
+                # Interleave tx and rx  
+                flat_blank = [j for i in zip(self.tx_blank, self.rx_blank)
                               for j in i];
-                bfstring = "";
-                for j in flat_blank:
-                    bfstring += str(j) + " "
+                bfstring = ' '.join(flat_blank)
                 bf.write(bfstring + "\n")
-            #setup z when blanking
-            self.z = [None]*len(self.rx_blank)  
+                
+            # Setup z when blanking
+            self.z = [None] * len(self.rx_blank)  
                  
-        #compute control
-        ods = map(self.computeOD,self.tx_blank,self.rx_blank,
-                            tx,rx)
-        cont = map(self.computeControl,ods, self.z,range(8),
+        # Compute control
+        # TODO: number of chambers should be configurable, no?
+        ods = map(self.computeOD, self.tx_blank,
+        		  self.rx_blank, tx, rx)
+        cont = map(self.computeControl, ods, self.z, range(8),
                    [time()-self.start_time]*len(self.z))
         
         #u = [q[0] for q in cont]
         #self.z = [q[1] for q in cont]
-        #sepparate u lists from z
+        # Sepparate u lists from z
         contT = zip(*cont) #transpose cont values [([u1,u2],z),([u1,u2],z),...]
         u = array(contT[0]).transpose() #u=array([[u1,u1,u1,...],[u2,u2,u2,...]])
         self.z = contT[1]
         
         
-        #set excluded chambers to dilute at 11 units/chamber
+        # Set excluded chambers to dilute at 11 units/chamber
         try:
             exf = open('exclude.txt','r')
             exvals = map(int,exf.readline().split())
@@ -223,7 +227,7 @@ class Controller(object):
         except:
             pass
             
-        #log events
+        # Log events
         s = str(int(round(time())))+" " \
             + str(map(round,ods,[4]*len(ods)))+" " \
             + '[' + ', '.join([str(Q) for Q in self.z])+"] " \
@@ -232,7 +236,7 @@ class Controller(object):
         f.write(s+'\n')
         f.close()
         
-        #handle dispensing
+        # Handle dispensing
         with self.stdout_lock:
             print s
         
@@ -243,14 +247,14 @@ class Controller(object):
             print 'sel 0'
             sleep(0.5)
                 
-            #TODO: parameterize antibacklash, now 100
+            # TODO: parameterize antibacklash, now 100
             self.pump.withdraw(u.sum(axis=1)+100)
             self.pump.waitForPumping()
             self.pump.dispense(ones((u.shape[0],1))*100)
             self.pump.waitForPumping()
             chamber_num = 1
             
-            # Dispvals gets a tuple of dispense volumes for chamber_num
+            # dispvals gets a tuple of dispense volumes for chamber_num
             for dispvals in u.transpose():
                 selstr = "sel%s;" % chamber_num
                 #if we're moving from PV1 to PV2 then close first
