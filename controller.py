@@ -70,26 +70,26 @@ class Controller(object):
             self.serpt.write("clo;")
             #self.serpt.flush()
 
-		# Construct the timer threads that perform repeated actions.
+        # Construct the timer threads that perform repeated actions.
         # TODO: make serial check period configurable.
         self.start_time = None  # Set on call to start()
         control_period = int(cparams['period'])
         self.cont_timer = mytimer(control_period, self.controlLoop)        
         self.ser_timer = mytimer(2, self.serialCheck)
-	    
+        
     def start(self):
-    	"""Starts the controller.
-    	
-    	So you can construct one without starting all the threads...
-    	"""
-    	assert self.start_time is None, 'Already started!'
-    	self.start_time = time()
-    	self.cont_timer.start()
-    	self.ser_timer.start()
+        """Starts the controller.
+        
+        So you can construct one without starting all the threads...
+        """
+        assert self.start_time is None, 'Already started!'
+        self.start_time = time()
+        self.cont_timer.start()
+        self.ser_timer.start()
     
     def quit(self):
-    	"""Quit the controller."""
-    	assert self.start_time is not None, 'Can\'t quit something you\'ve not started.'
+        """Quit the controller."""
+        assert self.start_time is not None, 'Can\'t quit something you\'ve not started.'
         self.cont_timer.stop()
         self.ser_timer.stop()
         

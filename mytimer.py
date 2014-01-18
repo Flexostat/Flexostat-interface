@@ -19,12 +19,12 @@ class mytimer(threading.Thread):
     """
     
     def __init__(self, period, callback):
-    	"""Initialize the timer.
-    	
-    	Args:
-    		period: how frequently to call the callback (seconds).
-    		callback: zero-argument function to call.
-    	"""
+        """Initialize the timer.
+        
+        Args:
+            period: how frequently to call the callback (seconds).
+            callback: zero-argument function to call.
+        """
         threading.Thread.__init__(self)
         self.starttime = 0
         self.p = period
@@ -39,14 +39,14 @@ class mytimer(threading.Thread):
         self.go = False
 
     def _myround(self, x, base):
-    	"""Custom rounding method.
-    	
-    	Rounds "x" to a number that is divisible by "base".
-    	
-    	Args:
-    		x: value to round.
-    		base: return value should be divisble by base.
-    	"""
+        """Custom rounding method.
+        
+        Rounds "x" to a number that is divisible by "base".
+        
+        Args:
+            x: value to round.
+            base: return value should be divisble by base.
+        """
         return int(base * round(float(x)/base))
 
     def _mytime(self):
@@ -74,8 +74,8 @@ class mytimer(threading.Thread):
     
 
 def _callme():
-	"""Test callback."""
-	print "tick: ", str(time())
+    """Test callback."""
+    print "tick: ", str(time())
     
     
 if __name__ == '__main__':

@@ -10,8 +10,7 @@ import time
 import traceback
 
 
-
-if __name__ == '__main__':
+def Main():
     # Startup stacktracer for debugging deadlock
     stacktracer.trace_start("trace.html",interval=60,auto=True)
     
@@ -58,4 +57,7 @@ if __name__ == '__main__':
         print 'shutting down'
         cont.quit()
         time.sleep(1.1)
-        
+
+
+if __name__ == '__main__':
+    Main()
