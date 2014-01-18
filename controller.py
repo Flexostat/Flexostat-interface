@@ -69,14 +69,14 @@ class Controller(object):
         with self.serpt.lock:
             self.serpt.write("clo;")
             #self.serpt.flush()
-        
-        self.start_time = None
-        self.cont_timer = mytimer(int(cparams['period']),self.controlLoop)
-        
-        # Start the serial polling timer, 2 second period
-        # TODO: make serial check period configurable?
+
+		# Construct the timer threads that perform repeated actions.
+        # TODO: make serial check period configurable.
+        self.start_time = None  # Set on call to start()
+        control_period = int(cparams['period'])
+        self.cont_timer = mytimer(control_period, self.controlLoop)        
         self.ser_timer = mytimer(2, self.serialCheck)
-    
+	    
     def start(self):
     	"""Starts the controller.
     	

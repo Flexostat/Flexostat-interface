@@ -37,9 +37,10 @@ if __name__ == '__main__':
     else:
         pump_port = None
     
-    # Make the controler
+    # Make and start the controler
     cont = Controller(controller_params, logs, pump_params,
                       cont_port, pump_port)
+    cont.start()
     
     # Setup network configue port
     def cb(cmd):
