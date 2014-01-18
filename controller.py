@@ -86,7 +86,10 @@ class Controller(object):
         self.ser_timer.stop()
         
     def serialCheck(self):
-    	"""Reads data from the serial port every time called."""
+    	"""Reads data from the serial port.
+    	
+    	Called in a thread every N seconds.
+    	"""
     	# Serial port better be initialized
     	assert self.serpt, 'ServoStat control serial port not initialized!'
     	
