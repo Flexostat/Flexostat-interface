@@ -86,18 +86,15 @@ class Controller(object):
         self.ser_timer.stop()
         
     def serialCheck(self):
-        # If the serpt is uninitialized then do nothing.
-        # TODO: does this really need to be in a try-except?
-        # Why not just check that self.serpt != None?
-        try:
-        	# No need for lock.
-        	# This runs in the only thread that READS serpt
-            ##with self.serpt.lock:
-            while self.serpt.inWaiting() > 0:
-                line = self.serpt.readline().strip()
-                self.parseline(line)
-        except AttributeError, e:
-            pass
+    	"""Reads data from the serial port every time called."""
+    	# Serial port better be initialized
+    	assert self.serpt, 'ServoStat control serial port not initialized!'
+    	
+    	# No need for lock:
+    	# This runs in the only thread that READS serpt
+    	while self.serpt.inWaiting() > 0:
+    		line = self.serpt.readline().strip()
+    		self.parseline(line)
         
     def parseline(self, line):
     	"""Parses a line from the serial port.

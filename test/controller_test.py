@@ -60,11 +60,18 @@ class ServoStatControllerTest(unittest.TestCase):
 		self.controller.serialCheck()
 	
 	def testSerialCheckWithOutput(self):
-		output_ods = ['10', '200'] * 8
+		tx_val, rx_val = 10, 200
+		output_ods = [str(tx_val), str(rx_val)] * 8
 		output_ods = ' '.join(output_ods)
 		self.mock_control_port._appendToInBuffer(output_ods)
 		self.controller.serialCheck()
-	
+		
+		# Check that the parsing gave the expected values
+		expected_tx_vals = [tx_val] * 8
+		expected_rx_vals = [rx_val] * 8
+		self.assertEquals(expected_rx_vals, self.controller.rx_val)
+		self.assertEquals(expected_tx_vals, self.controller.tx_val)
+		
 
 if __name__ == '__main__':
 	unittest.main()
