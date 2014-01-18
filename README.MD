@@ -10,6 +10,10 @@ Requirements
    * numpy: http://www.numpy.org/
    * pygments: (available through pip)
 
+To install requirements, run:
+$ sudo pip install numpy pygments pySerial
+
+
 Configuration
 ------------------
 
