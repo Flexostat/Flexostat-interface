@@ -1,6 +1,7 @@
 from controller import Controller as ServoStatController
 from ConfigParser import SafeConfigParser
 
+import math
 import threading
 import unittest
 
@@ -77,6 +78,15 @@ class ServoStatControllerTest(unittest.TestCase):
         # Second call to start should fail.
         self.assertRaises(AssertionError, self.controller.start)
         self.controller.quit()  # quit at the end.
+    
+    def testComputeOD(self):
+    	tx, rx = 10, 80
+    	btx, brx = 10, 100
+    	blank = float(brx) / float(btx)
+    	measurement = float(rx) / float(tx)
+    	expected_od = math.log10(blank / measurement)
+    	actual_od = self.controller.computeOD(btx, brx, tx, rx)
+    	self.assertAlmostEquals(expected_od, actual_od, 5)
         
 
 if __name__ == '__main__':
