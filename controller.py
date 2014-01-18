@@ -71,6 +71,7 @@ class Controller(object):
             #self.serpt.flush()
         
         # Start the control-loop timer.
+        # TODO: don't start the timers on construction! make a start() function.
         self.start_time = time()
         self.cont_timer = mytimer(int(cparams['period']),self.controlLoop)
         self.cont_timer.start()
@@ -85,7 +86,9 @@ class Controller(object):
         self.ser_timer.stop()
         
     def serialCheck(self):
-        #if the serpt is uninitialized then do nothing.
+        # If the serpt is uninitialized then do nothing.
+        # TODO: does this really need to be in a try-except?
+        # Why not just check that self.serpt != None?
         try:
         	# No need for lock.
         	# This runs in the only thread that READS serpt
@@ -93,7 +96,7 @@ class Controller(object):
             while self.serpt.inWaiting() > 0:
                 line = self.serpt.readline().strip()
                 self.parseline(line)
-        except AttributeError:
+        except AttributeError, e:
             pass
         
     def parseline(self, line):
@@ -127,7 +130,8 @@ class Controller(object):
             # TODO: can keep the logfiles open in append mode, no?
             f = open(self.logfiles['odlog'], 'a')
             time_str = str(int(round(time())))
-            s = '%s %s' % (s, ' '.join(data))
+            str_data = map(str, data)
+            s = '%s %s' % (time_str, ' '.join(str_data))
             f.write(s + '\n')
             f.close()
             
@@ -211,7 +215,7 @@ class Controller(object):
         
         #u = [q[0] for q in cont]
         #self.z = [q[1] for q in cont]
-        # Sepparate u lists from z
+        # Separate u lists from z
         contT = zip(*cont) #transpose cont values [([u1,u2],z),([u1,u2],z),...]
         u = array(contT[0]).transpose() #u=array([[u1,u1,u1,...],[u2,u2,u2,...]])
         self.z = contT[1]
