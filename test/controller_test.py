@@ -52,9 +52,6 @@ class ServoStatControllerTest(unittest.TestCase):
 										 	  self.pump_params,
 											  self.mock_control_port,
 											  self.mock_pump_port)
-	
-	def tearDown(self):
-		self.controller.quit()
 		
 	def testSerialCheckNoOutput(self):
 		self.controller.serialCheck()
@@ -71,6 +68,15 @@ class ServoStatControllerTest(unittest.TestCase):
 		expected_rx_vals = [rx_val] * 8
 		self.assertEquals(expected_rx_vals, self.controller.rx_val)
 		self.assertEquals(expected_tx_vals, self.controller.tx_val)
+		
+	def testStartAndQuit(self):
+		# Can't quit before starting.
+		self.assertRaises(AssertionError, self.controller.quit)
+		self.controller.start()
+		
+		# Second call to start should fail.
+		self.assertRaises(AssertionError, self.controller.start)
+		self.controller.quit()  # quit at the end.
 		
 
 if __name__ == '__main__':

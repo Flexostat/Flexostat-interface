@@ -15,21 +15,21 @@ debug = False
 
 class Controller(object):
     def __init__(self, cparams, logfiles, pparams, cport, pport):
-    	"""Initialize the controller.
-    	
-    	Args:
-    		cparams: configuration parameters.
-    		logfiles: names of files to log to.
-    		pparams: pump parameters.
-    		cport: controller serial port.
-    		pport: pump serial port.
-    	"""
-    	pumpdriver_package = 'plugins.%s' % pparams['pumpdriver']
-    	control_function_package = 'plugins.%s' % cparams['controlfun']
-    	
-    	# Import pumpdriver
+        """Initialize the controller.
+        
+        Args:
+            cparams: configuration parameters.
+            logfiles: names of files to log to.
+            pparams: pump parameters.
+            cport: controller serial port.
+            pport: pump serial port.
+        """
+        pumpdriver_package = 'plugins.%s' % pparams['pumpdriver']
+        control_function_package = 'plugins.%s' % cparams['controlfun']
+        
+        # Import pumpdriver
         pumpdriver = __import__(pumpdriver_package, globals(), locals(),
-        						['Pump'], -1)
+                                ['Pump'], -1)
                                 
         # Fetch the control computation, make it a method of self.
         _temp = __import__(control_function_package, globals(), locals(),
@@ -70,41 +70,79 @@ class Controller(object):
             self.serpt.write("clo;")
             #self.serpt.flush()
         
-        # Start the control-loop timer.
-        # TODO: don't start the timers on construction! make a start() function.
-        self.start_time = time()
+        self.start_time = None
         self.cont_timer = mytimer(int(cparams['period']),self.controlLoop)
-        self.cont_timer.start()
         
         # Start the serial polling timer, 2 second period
         # TODO: make serial check period configurable?
         self.ser_timer = mytimer(2, self.serialCheck)
-        self.ser_timer.start()
-        
+    
+    def start(self):
+    	"""Starts the controller.
+    	
+    	So you can construct one without starting all the threads...
+    	"""
+    	assert self.start_time is None, 'Already started!'
+    	self.start_time = time()
+    	self.cont_timer.start()
+    	self.ser_timer.start()
+    
     def quit(self):
+    	"""Quit the controller."""
+    	assert self.start_time is not None, 'Can\'t quit something you\'ve not started.'
         self.cont_timer.stop()
         self.ser_timer.stop()
         
     def serialCheck(self):
-    	"""Reads data from the serial port.
-    	
-    	Called in a thread every N seconds.
-    	"""
-    	# Serial port better be initialized
-    	assert self.serpt, 'ServoStat control serial port not initialized!'
-    	
-    	# No need for lock:
-    	# This runs in the only thread that READS serpt
-    	while self.serpt.inWaiting() > 0:
-    		line = self.serpt.readline().strip()
-    		self.parseline(line)
+        """Reads data from the serial port.
+        
+        Called in a thread every N seconds.
+        """
+        # Serial port better be initialized
+        assert self.serpt, 'ServoStat control serial port not initialized!'
+        
+        # No need for lock:
+        # This runs in the only thread that READS self.serpt
+        while self.serpt.inWaiting() > 0:
+            line = self.serpt.readline().strip()
+            self.parseline(line)
+    
+    def parseOD(self, line):
+        """Helper that parses OD data from a line off the serial port.
+        
+        Args:
+            line: the received line.
+        
+        Raises:
+            ValueError if the line could not be parsed.
+        """
+        data = map(int, line.split())
+        
+        # Data line format: tx1 rx1 tx2 rx2 
+        # TODO: can keep the logfiles open in append mode, no?
+        f = open(self.logfiles['odlog'], 'a')
+        time_str = str(int(round(time())))
+        str_data = map(str, data)
+        output_s = '%s %s' % (time_str, ' '.join(str_data))
+        f.write(output_s + '\n')
+        f.close()
+
+        with self.stdout_lock:
+            print output_s
+
+        # Store the reported data locally.
+        # Should this be threadsafe?????
+        # Yes. It should be.
+        with self.OD_datalock:
+            self.tx_val = data[0::2]
+            self.rx_val = data[1::2]
         
     def parseline(self, line):
-    	"""Parses a line from the serial port.
-    	
-    	Args:
-    		line: the received line.
-    	"""
+        """Parses a line from the serial port.
+        
+        Args:
+            line: the received line.
+        """
         # Reporting something back other than OD
         if line[0].isalpha():
             if line[0] == 's':
@@ -117,45 +155,27 @@ class Controller(object):
                 except:
                     with self.stdout_lock:
                         print 'Command Response: ' + line
-            
-        else:
-            try:
-                data = map(int, line.split())
-            except ValueError:
-                with self.stdout_lock:
-                    print 'bad line:', line
-                return
-                
-            # Data line format: tx1 rx1 tx2 rx2 
-            # TODO: can keep the logfiles open in append mode, no?
-            f = open(self.logfiles['odlog'], 'a')
-            time_str = str(int(round(time())))
-            str_data = map(str, data)
-            s = '%s %s' % (time_str, ' '.join(str_data))
-            f.write(s + '\n')
-            f.close()
-            
+            return
+        
+        # First character is not alphabetical - reporting OD.
+        try:
+            self.parseOD(line)
+        except ValueError:
             with self.stdout_lock:
-                print s
-             
-            # Store the reported data locally.
-            # Should this be threadsafe?????
-            # Yes. It should be.
-            with self.OD_datalock:
-                self.tx_val = data[0::2]
-                self.rx_val = data[1::2]
+                print 'bad line:', line
+            return
             
     def computeOD(self, btx, brx, tx, rx):
         """Compute the OD from blank values and signal values.
         
         Args:
-        	btx: blank transmitted light value.
-        	brx: blank reflected light value.
-        	tx: current transmitted light value.
-        	rx: current reflected light value.
+            btx: blank transmitted light value.
+            brx: blank reflected light value.
+            tx: current transmitted light value.
+            rx: current reflected light value.
         
         Returns:
-        	Calculated optical density for the current values.
+            Calculated optical density for the current values.
         """
         # If either value is 0 then return 0. Since the proper behavior in an 
         # error is to do nothing.
@@ -181,19 +201,19 @@ class Controller(object):
             rx = self.rx_val
             
         if len(rx) == 0 or len(tx) == 0:
-        	# Have no measurements yet
+            # Have no measurements yet
             return
         
         # TODO: do we need to lock writing blanks?
         if len(self.tx_blank) == 0 or len(self.rx_blank) == 0:
             try:
-            	# TODO: Make this parsing a helper.
+                # TODO: Make this parsing a helper.
                 bf = open('blank.dat', 'r')
                 blank_values = map(int,bf.readline().split())
                 self.tx_blank = blank_values[0::2]
                 self.rx_blank = blank_values[1::2]
             except:
-            	# No blank.dat file. Use the most recent measurement.
+                # No blank.dat file. Use the most recent measurement.
                 self.rx_blank = rx
                 self.tx_blank = tx
                 bf = open('blank.dat', 'w')
@@ -209,7 +229,7 @@ class Controller(object):
         # Compute control
         # TODO: number of chambers should be configurable, no?
         ods = map(self.computeOD, self.tx_blank,
-        		  self.rx_blank, tx, rx)
+                  self.rx_blank, tx, rx)
         cont = map(self.computeControl, ods, self.z, range(8),
                    [time()-self.start_time]*len(self.z))
         
