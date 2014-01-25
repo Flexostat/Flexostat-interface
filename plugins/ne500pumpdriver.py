@@ -4,52 +4,55 @@ import threading
 import sys
 
 
-class Pump:
+class Pump(object):
     debug = False
     
-    def __init__(self,cparams,logfiles,pparams,cport,pport):
+    def __init__(self, cparams, logfiles, pparams, unused_cport, pport):
         self.logfiles = logfiles
         self.pparams = pparams
-        self.cparams = cparams #all controller parameters live here
-        self.serpt = cport
+        self.cparams = cparams # All controller parameters live here
         self.pport = pport
         
-        if pport != None and (pport.isOpen()):
+        if pport is not None and pport.isOpen():
             self._initPump()
-            
             
     def _initPump(self):
         print "pump init"
         with self.pport.lock:
             self.pport.flushInput()
-            #disable alarms
+            # Disable alarms
             s = "AL 0\r"
+            print ">>", s
+            self.pport.write(s)
+            print "<<", self._pumpGetResponse()
+            
+            # Set diameter
+            diameter = self.pparams['syringediameter']
+            s = "DIA %s\r" % diameter
+            print ">>", s
+            self.pport.write(s)
+            print "<< ", self._pumpGetResponse()
+            
+            # Set pump rate
+            syringe_rate = self.pparams['syringerate']
+            rate_unit = self.pparams['syringrateunit']
+            s = "RAT %s %s\r" % (syringe_rate, rate_unit)
             print ">> " + s
             self.pport.write(s)
             print "<< " + self._pumpGetResponse()
-            #set diameter
-            s = "DIA "+self.pparams['syringediameter']+"\r"
-            print ">> " + s
-            self.pport.write(s)
-            print "<< " + self._pumpGetResponse()
-            #set pump rate
-            s = ("RAT "+self.pparams['syringerate']+
-                 self.pparams['syringrateunit']+"\r")
-            print ">> " + s
-            self.pport.write(s)
-            print "<< " + self._pumpGetResponse()
-            #set volume units
-            s = "VOL "+self.pparams['volumeunits']+"\r"
+            
+            # Set volume units
+            volume_units = self.pparams['volumeunits']
+            s = "VOL %s\r" % volume_units
             print ">> " + s
             self.pport.write(s)
             print "<< " + self._pumpGetResponse()
     
-    def _pumpGetResponse(self):
-        if debug:
-            with self.stdout_lock:
-                sys.stdout.write("+++++++START PGR:")
+    def _pumpGetResponse(self):        
+        if self.debug:
+            print "+++++++START PGR:"
             
-        while self.pport.inWaiting() <=0:
+        while self.pport.inWaiting() <= 0:
             sleep(0.1)
         response = self.pport.read(self.pport.inWaiting())
         while response[-1] != '\x03':
@@ -57,9 +60,8 @@ class Pump:
                 sleep(0.1)
             response = response + self.pport.read(self.pport.inWaiting())
             
-        if debug:
-            with self.stdout_lock:
-                print response
+        if self.debug:
+            print response
             
         return response
         
@@ -69,12 +71,12 @@ class Pump:
         with self.pport.lock:
             pump.write("DIR WDR\r")
             self._pumpGetResponse()
-            pump.write("VOL"+u+"\r")
+            pump.write("VOL %s\r" % u)
             self._pumpGetResponse()
             pump.write("RUN\r")
             self._pumpGetResponse()
     
-    def dispense(self,volume):
+    def dispense(self, volume):
         pump = self.pport
         u = str(int(volume))
         with self.pport.lock:
