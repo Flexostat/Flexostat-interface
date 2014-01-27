@@ -1,6 +1,5 @@
 from time import sleep, time
 import threading
-#import wx
 import sys
 
 
