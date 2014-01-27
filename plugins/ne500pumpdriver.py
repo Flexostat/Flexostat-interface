@@ -82,7 +82,7 @@ class Pump(object):
         with self.pport.lock:
             pump.write("DIR INF\r")
             self._pumpGetResponse()
-            pump.write("VOL"+u+"\r")
+            pump.write("VOL %s\r" % u)
             self._pumpGetResponse()
             pump.write("RUN\r")
             self._pumpGetResponse()
