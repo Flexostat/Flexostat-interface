@@ -191,11 +191,15 @@ class Controller(object):
         return od
         
     def controlLoop(self):
-        # The plan
-        #  * get OD
-        #  *   if blanks are empty, then store a blank
-        #  * compute control value
-        #  * do dilution (control valves and pumps)
+    	"""Main loop of control.
+    	
+    	The plan
+          * get OD
+          *   if blanks are empty, then store a blank
+          * compute control value
+          * do dilution (control valves and pumps)
+    	"""
+        
         with self.OD_datalock:
             tx = self.tx_val
             rx = self.rx_val
@@ -216,12 +220,13 @@ class Controller(object):
                 # No blank.dat file. Use the most recent measurement.
                 self.rx_blank = rx
                 self.tx_blank = tx
-                bf = open('blank.dat', 'w')
-                # Interleave tx and rx  
-                flat_blank = [j for i in zip(self.tx_blank, self.rx_blank)
-                              for j in i];
-                bfstring = ' '.join(flat_blank)
-                bf.write(bfstring + "\n")
+                
+                with open('blank.dat', 'w') as bf:
+					# Interleave tx and rx  
+					flat_blank = [str(j) for i in zip(self.tx_blank, self.rx_blank)
+								  for j in i];
+					bfstring = ' '.join(flat_blank)
+					bf.write('%s\n' % bfstring)
                 
             # Setup z when blanking
             self.z = [None] * len(self.rx_blank)  
@@ -252,13 +257,17 @@ class Controller(object):
             pass
             
         # Log events
-        s = str(int(round(time())))+" " \
-            + str(map(round,ods,[4]*len(ods)))+" " \
-            + '[' + ', '.join([str(Q) for Q in self.z])+"] " \
-            + str(u).replace('\n','')
-        f = open(self.logfiles['fulllog'],"a")
-        f.write(s+'\n')
-        f.close()
+        time_secs = int(round(time()))
+        rounded_ods = map(round, ods, [4] * len(ods))
+        str_zs = [str(Q) for Q in self.z]
+        clean_u = str(u).replace('\n', '')
+        s = '%s %s [%s] %s' % (time_secs,
+        					   rounded_ods,
+        					   str_zs,
+        					   clean_u)
+        
+        with open(self.logfiles['fulllog'], 'a') as f:
+        	f.write('%s\n' % s)
         
         # Handle dispensing
         with self.stdout_lock:
@@ -272,9 +281,9 @@ class Controller(object):
             sleep(0.5)
                 
             # TODO: parameterize antibacklash, now 100
-            self.pump.withdraw(u.sum(axis=1)+100)
+            self.pump.withdraw(u.sum(axis=1) + 100)
             self.pump.waitForPumping()
-            self.pump.dispense(ones((u.shape[0],1))*100)
+            self.pump.dispense(ones((u.shape[0], 1)) * 100)
             self.pump.waitForPumping()
             chamber_num = 1
             
@@ -305,9 +314,9 @@ class Controller(object):
 #                self.serpt.flush()
             print 'clo'
                 
-        except AttributeError:
+        except AttributeError, e:
             with self.stdout_lock:
-                print 'no pump'
+                print 'no pump', e
             traceback.print_exc(file=sys.stdout)
         
         pass

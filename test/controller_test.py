@@ -19,7 +19,14 @@ class MockSerialPort():
     
     def write(self, val):
         self.write_log.append(val)
-        
+    
+    def flushInput(self):
+    	pass
+    	
+    def isOpen(self):
+    	"""TODO: maybe simulate closed state?"""
+    	return True
+    
     def inWaiting(self):
         return sum(map(len, self.in_buffer))
     
