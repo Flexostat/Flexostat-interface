@@ -1,6 +1,6 @@
 //some constants:
 basedataurl = '/log.dat';
-reloadperiod = 5; //min
+reloadPeriod = 0.25; //min
 
 //some globals:
 tf = 0;
@@ -16,7 +16,8 @@ $(function(){
     }
   });
 
-  setInterval(loadPlots,reloadperiod*60*1000);
+  var reloadPeriodMS = reloadPeriod * 60.0 * 1000.0;
+  setInterval(loadPlots, reloadPeriodMS);
   loadPlots();
 });
 
@@ -34,19 +35,19 @@ function loadPlots(){
       nd[ind] = jQuery.map(line.trim().split(' '),
                            function(v,k){return Number(v);});
     }
-    odchart = makeplot('odplot',getSeries(nd,'OD'));
+    odchart = makeplot('odplot', getSeries(nd,'OD'));
     odchart.setTitle({text: "Optical Density"});
-    uchart = makeplot('uplot',getSeries(nd,'U'));
+    uchart = makeplot('uplot', getSeries(nd,'U'));
     uchart.setTitle({text: "Dilution Rate"});
   });
 }
 
 
-function getSeries(numData,datatype){
+function getSeries(numData, datatype){
   /*numData: the numerical array of raw data
    *datatype: 'OD': the optical density data, 'U': the dilution rate data.
    */
-  if (datatype==="OD") {
+  if (datatype === "OD") {
     var offset = 1;
   } else if (datatype === "U") {
     var offset = 9;
@@ -66,7 +67,7 @@ function getSeries(numData,datatype){
   return seriesData;
 }
 
-function makeplot(thediv, seriesdata){
+function makeplot(thediv, seriesdata) {
   /*thediv: string name of div id to plot to
    *seriesdata: the series data:
    *  seriesdata[j]: the data corresponding to the j th time point
@@ -101,19 +102,23 @@ function makeplot(thediv, seriesdata){
                    }};
   }
 
-  $('#'+thediv).highcharts('StockChart',{
-    chart:{renderTo:thediv},
+  var divName = '#' + thediv;
+  var myDiv = $(divName);
+  var myChart = myDiv.highcharts();
+  myDiv.highcharts('StockChart', {
+    chart: {renderTo: thediv},
     series: hcdata,
-    legend:{enabled:true},
+    legend: {enabled: true},
     rangeSelector: {
       buttons: [{type:'minute', count: 60, text: '1hr'},
+                {type:'minute', count: 60*3, text: '3hr'},
                 {type:'minute', count: 60*12, text: '12hr'},
                 {type:'day', count:1, text: '1d'},
                 {type:'day', count:3, text: '3d'},
                 {type:'week', count:1, text: '1wk'},
-                {type:'all',text:'All'}]
+                {type:'all', text:'All'}]
     },
   });
 
-  return $('#'+thediv).highcharts();
+  return $(divName).highcharts();
 }
