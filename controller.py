@@ -218,7 +218,7 @@ class Controller(object):
                 self.tx_blank = tx
                 bf = open('blank.dat', 'w')
                 # Interleave tx and rx  
-                flat_blank = [j for i in zip(self.tx_blank, self.rx_blank)
+                flat_blank = [str(j) for i in zip(self.tx_blank, self.rx_blank)
                               for j in i];
                 bfstring = ' '.join(flat_blank)
                 bf.write(bfstring + "\n")
