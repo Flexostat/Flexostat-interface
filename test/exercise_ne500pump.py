@@ -16,7 +16,7 @@ import threading
 def Main():
     # Read test configuration from the test config file
     config = SafeConfigParser()
-    config.read('test/test_config.ini')
+    config.read('test/ne500_config.ini')
     
     controller_params = dict(config.items('controller'))
     pump_params = dict(config.items('pump'))
