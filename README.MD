@@ -9,9 +9,10 @@ Requirements
    * Pyserial 2.7: https://pypi.python.org/pypi/pyserial
    * numpy: http://www.numpy.org/
    * pygments: (available through pip)
+   * flask (for the plotserver, which plots the experiment in a browser)
 
 To install requirements, run:
-$ sudo pip install numpy pygments pySerial
+$ sudo pip install numpy pygments pySerial flask
 
 
 Configuration
