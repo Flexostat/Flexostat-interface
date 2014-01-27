@@ -1,5 +1,5 @@
 //some constants:
-basedataurl = 'http://depts.washington.edu/soslab/turbidostat/log.php';
+basedataurl = '/log.dat';
 reloadperiod = 5; //min
 
 //some globals:
@@ -8,8 +8,8 @@ odchart = null;
 uchart = null;
 
 $(function(){
-  //set some API options
-  //don't use utc, use local time.
+  // Set some API options
+  // Don't use utc, use local time.
   Highcharts.setOptions({
     global: {
         useUTC: false
@@ -20,11 +20,10 @@ $(function(){
   loadPlots();
 });
 
-//TODO: only load recent data
+// TODO: only load recent data
 function loadPlots(){
   var req = jQuery.ajax(
-//              basedataurl+'?start=1390077690',
-              basedataurl+'?start=0',
+              basedataurl,
               {dataType:'text'});
   req.done(function(data){
     var lines = data.replace(/[\[\], ]+/g," ").trim().split("\n");
