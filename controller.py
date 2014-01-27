@@ -148,7 +148,6 @@ class Controller(object):
             if line[0] == 's':
                 with self.stdout_lock:
                     print 'setpont: ' + line
-#                self.f.m_textCtrl_sp.ChangeValue(line.lstrip('s'))
             else:
                 try:
                     wx.MessageBox(line, 'Command Response')
