@@ -259,7 +259,7 @@ class Controller(object):
         # Log events
         time_secs = int(round(time()))
         rounded_ods = map(round, ods, [4] * len(ods))
-        str_zs = [str(Q) for Q in self.z]
+        str_zs = ['%.5f' % Q for Q in self.z]
         clean_u = str(u).replace('\n', '')
         s = '%s %s [%s] %s' % (time_secs,
         					   rounded_ods,
