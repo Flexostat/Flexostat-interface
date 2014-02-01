@@ -2,6 +2,7 @@ from controller import Controller
 from ConfigParser import SafeConfigParser
 from network import CTBasicServer
 
+import argparse
 import serial
 import stacktracer
 import sys
@@ -11,12 +12,17 @@ import traceback
 
 
 def Main():
+    parser = argparse.ArgumentParser(description='Turbidostat controller.')
+    parser.add_argument("-c", "--config_filename", default="config.ini",
+                        help="Where to load configuration from.")
+    args = parser.parse_args()
+
     # Startup stacktracer for debugging deadlock
-    stacktracer.trace_start("trace.html",interval=60,auto=True)
+    stacktracer.trace_start("trace.html", interval=60, auto=True)
     
     # Read configuration from the config file
     config = SafeConfigParser()
-    config.read('config.ini')
+    config.read(args.config_filename)
     controller_params = dict(config.items('controller'))
     port_names = dict(config.items('ports'))
     pump_params = dict(config.items('pump'))
