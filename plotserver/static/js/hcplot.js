@@ -1,6 +1,6 @@
 //some constants:
 basedataurl = '/log.dat';
-reloadPeriod = 0.25; //min
+reloadPeriod = 2; //min
 
 //some globals:
 tf = 0;
