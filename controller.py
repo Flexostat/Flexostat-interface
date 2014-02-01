@@ -51,6 +51,7 @@ class Controller(object):
         self.logfiles = logfiles
         self.pparams = pparams
         self.cparams = cparams # all controller parameters live here
+        self.blank_filename = self.logfiles['blanklog']
         
         # Serial ports
         self.serpt = cport
@@ -211,7 +212,7 @@ class Controller(object):
         if len(self.tx_blank) == 0 or len(self.rx_blank) == 0:
             try:
                 # TODO: Make this parsing a helper.
-                bf = open('blank.dat', 'r')
+                bf = open(self.blank_fname, 'r')
                 blank_values = map(int,bf.readline().split())
                 self.tx_blank = blank_values[0::2]
                 self.rx_blank = blank_values[1::2]
@@ -220,7 +221,7 @@ class Controller(object):
                 self.rx_blank = rx
                 self.tx_blank = tx
                 
-                with open('blank.dat', 'w') as bf:
+                with open(self.blank_fname, 'w') as bf:
 					# Interleave tx and rx  
 					flat_blank = [str(j) for i in zip(self.tx_blank, self.rx_blank)
 								  for j in i];
