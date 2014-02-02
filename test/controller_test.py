@@ -2,6 +2,7 @@ from controller import Controller as ServoStatController
 from ConfigParser import SafeConfigParser
 
 import math
+import time
 import threading
 import unittest
 
@@ -85,7 +86,23 @@ class ServoStatControllerTest(unittest.TestCase):
         # Second call to start should fail.
         self.assertRaises(AssertionError, self.controller.start)
         self.controller.quit()  # quit at the end.
+
+    def testStartAndQuitWithDataOnPort(self):
+        # Can't quit before starting.
+        self.assertRaises(AssertionError, self.controller.quit)
+        self.controller.start()
+        
+        tx_val, rx_val = 10, 200
+        output_ods = [str(tx_val), str(rx_val)] * 8
+        output_ods = ' '.join(output_ods)
+        self.mock_control_port._appendToInBuffer(output_ods)
+        time.sleep(10.0)
+        
+        # Second call to start should fail.
+        self.assertRaises(AssertionError, self.controller.start)
+        self.controller.quit()  # quit at the end.
     
+
     def testComputeOD(self):
     	tx, rx = 10, 80
     	btx, brx = 10, 100

@@ -3,6 +3,7 @@ from mytimer import mytimer
 from math import log10
 from time import time, sleep
 
+import json
 import threading
 import wx
 import sys
@@ -101,6 +102,7 @@ class Controller(object):
         """
         # Serial port better be initialized
         assert self.serpt, 'ServoStat control serial port not initialized!'
+        print 'serialCheck'
         
         # No need for lock:
         # This runs in the only thread that READS self.serpt
@@ -203,8 +205,10 @@ class Controller(object):
         with self.OD_datalock:
             tx = self.tx_val
             rx = self.rx_val
-            
+        
+        print 'Control loop'
         if len(rx) == 0 or len(tx) == 0:
+            print 'Have no data.'
             # Have no measurements yet
             return
         
@@ -212,8 +216,8 @@ class Controller(object):
         if len(self.tx_blank) == 0 or len(self.rx_blank) == 0:
             try:
                 # TODO: Make this parsing a helper.
-                bf = open(self.blank_fname, 'r')
-                blank_values = map(int,bf.readline().split())
+                bf = open(self.blank_filename, 'r')
+                blank_values = map(int, bf.readline().split())
                 self.tx_blank = blank_values[0::2]
                 self.rx_blank = blank_values[1::2]
             except:
@@ -221,7 +225,7 @@ class Controller(object):
                 self.rx_blank = rx
                 self.tx_blank = tx
                 
-                with open(self.blank_fname, 'w') as bf:
+                with open(self.blank_filename, 'w') as bf:
 					# Interleave tx and rx  
 					flat_blank = [str(j) for i in zip(self.tx_blank, self.rx_blank)
 								  for j in i];
@@ -254,25 +258,24 @@ class Controller(object):
             for ee in exvals:
                 u[:,ee-1] = u[:,ee-1]+11
         except:
-            pass
-            
+        	pass
+        	            
         # Log events
+        print 'Logging data.'
         time_secs = int(round(time()))
-        rounded_ods = map(round, ods, [4] * len(ods))
-        str_zs = ['%.5f' % Q for Q in self.z]
-        clean_u = str(u).replace('\n', '')
-        s = '%s %s [%s] %s' % (time_secs,
-        					   rounded_ods,
-        					   str_zs,
-        					   clean_u)
-        
+        dlog = {'timestamp': time_secs,
+        		'ods': ods,
+        		'u': u.tolist(),
+        		'z': [str(z) for z in self.z]}
+        log_str = json.dumps(dlog)
+
         with open(self.logfiles['fulllog'], 'a') as f:
-        	f.write('%s\n' % s)
+        	f.write('%s\n' % log_str)
         
-        # Handle dispensing
         with self.stdout_lock:
-            print s
+            print log_str
         
+        # Handle dispensing.
         try:
             with self.serpt.lock:
                 self.serpt.write("sel0;") #select media source
@@ -312,7 +315,7 @@ class Controller(object):
             with self.serpt.lock:
                 self.serpt.write("clo;")
 #                self.serpt.flush()
-            print 'clo'
+            print 'clo;'
                 
         except AttributeError, e:
             with self.stdout_lock:
