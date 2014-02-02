@@ -8,7 +8,7 @@ from random import randint
 #
 #
 
-class State:
+class State(object):
     """ The state variable for the control funcion
     
     This does not need to adhear to any proper interface although a
@@ -16,6 +16,7 @@ class State:
     """
     def __init__(self):
         self.z = 0
+        
     def __str__(self):
         return '%.4f' % self.z
 

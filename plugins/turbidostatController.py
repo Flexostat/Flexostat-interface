@@ -1,15 +1,17 @@
 from numpy import array
 
-class State:
-    """ The state variable for the control funcion
+class State(object):
+    """The state variable for the control funcion
     
     This does not need to adhear to any proper interface although a
     readable __str__() method is highly recommended to allow for debugging.
     """
     def __init__(self):
         self.z = 90
+        
     def __str__(self):
         return '%.4f' % self.z
+
 
 def computeControl(self,od,z,chamber=0,time=0.0):
     """  Controller function
