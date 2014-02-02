@@ -27,17 +27,28 @@ function loadPlots(){
               basedataurl,
               {dataType:'text'});
   req.done(function(data){
-    var lines = data.replace(/[\[\], ]+/g," ").trim().split("\n");
+    var lines = data.trim().split("\n");
     //parse lines into 2d array of numbers.
     var nd = [];
-    for (ind in lines) {
-      var line = lines[ind];
-      nd[ind] = jQuery.map(line.trim().split(' '),
-                           function(v,k){return Number(v);});
+    odSeries = [];
+    dilutionSeries = [];
+    for (i in lines) {
+      var line = lines[i];
+      var parsed = JSON.parse(line);
+      var odDatum = [];
+      var dilutionDatum = [];
+      var timestamp = parsed.timestamp * 1000.0;
+      for (var j = 0; j < 8; ++j) {
+        odDatum[j] = (timestamp, parsed.ods[j]);
+        dilutionDatum[j] = (timestamp, parsed.u[j]);
+      }
+      
+      odSeries.push(odDatum);
+      dilutionSeries.push(dilutionDatum);
     }
-    odchart = makeplot('odplot', getSeries(nd,'OD'));
+    odchart = makeplot('odplot', odSeries);
     odchart.setTitle({text: "Optical Density"});
-    uchart = makeplot('uplot', getSeries(nd,'U'));
+    uchart = makeplot('uplot', dilutionSeries);
     uchart.setTitle({text: "Dilution Rate"});
   });
 }
