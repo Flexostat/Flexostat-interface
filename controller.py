@@ -102,7 +102,6 @@ class Controller(object):
         """
         # Serial port better be initialized
         assert self.serpt, 'ServoStat control serial port not initialized!'
-        print 'serialCheck'
         
         # No need for lock:
         # This runs in the only thread that READS self.serpt
@@ -206,9 +205,7 @@ class Controller(object):
             tx = self.tx_val
             rx = self.rx_val
         
-        print 'Control loop'
         if len(rx) == 0 or len(tx) == 0:
-            print 'Have no data.'
             # Have no measurements yet
             return
         
@@ -264,7 +261,7 @@ class Controller(object):
         print 'Logging data.'
         time_secs = int(round(time()))
         dlog = {'timestamp': time_secs,
-        		'ods': ods,
+        		'ods': [round(od, 4) for od in ods],
         		'u': u.tolist(),
         		'z': [str(z) for z in self.z]}
         log_str = json.dumps(dlog)
