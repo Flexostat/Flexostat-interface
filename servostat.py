@@ -22,6 +22,7 @@ def Main():
     
     # Read configuration from the config file
     config = SafeConfigParser()
+    print 'Reading config file from', args.config_filename
     config.read(args.config_filename)
     controller_params = dict(config.items('controller'))
     port_names = dict(config.items('ports'))
