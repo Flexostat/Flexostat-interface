@@ -22,7 +22,7 @@ $(function(){
 });
 
 // TODO: only load recent data
-function loadPlots(){
+function loadPlots() {
   var req = jQuery.ajax(
               basedataurl,
               {dataType:'text'});
@@ -39,8 +39,8 @@ function loadPlots(){
       var dilutionDatum = [];
       var timestamp = parsed.timestamp * 1000.0;
       for (var j = 0; j < 8; ++j) {
-        odDatum[j] = (timestamp, parsed.ods[j]);
-        dilutionDatum[j] = (timestamp, parsed.u[j]);
+        odDatum[j] = [timestamp, parsed.ods[j]];
+        dilutionDatum[j] = [timestamp, parsed.u[0][j]];
       }
       
       odSeries.push(odDatum);
@@ -51,31 +51,6 @@ function loadPlots(){
     uchart = makeplot('uplot', dilutionSeries);
     uchart.setTitle({text: "Dilution Rate"});
   });
-}
-
-
-function getSeries(numData, datatype){
-  /*numData: the numerical array of raw data
-   *datatype: 'OD': the optical density data, 'U': the dilution rate data.
-   */
-  if (datatype === "OD") {
-    var offset = 1;
-  } else if (datatype === "U") {
-    var offset = 9;
-  } else {
-    return null;
-  }
-  var seriesData = [];
-  var t0 = numData[0][0];
-  for (ind in numData){
-    var datum = [];
-    var d = numData[ind];
-    for (var odind = 0; odind<8;odind++){
-      datum[odind] = ([d[0]*1000,d[odind+offset]]); //[time,OD]
-    }
-    seriesData[ind] = datum;
-  }
-  return seriesData;
 }
 
 function makeplot(thediv, seriesdata) {
