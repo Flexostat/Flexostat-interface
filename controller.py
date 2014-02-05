@@ -146,7 +146,7 @@ class Controller(object):
             line: the received line.
         """
         # Reporting something back other than OD
-        if line[0].isalpha():
+        if line and line[0].isalpha():
             if line[0] == 's':
                 with self.stdout_lock:
                     print 'setpont: ' + line
