@@ -262,7 +262,7 @@ class Controller(object):
         time_secs = int(round(time()))
         dlog = {'timestamp': time_secs,
         		'ods': [round(od, 4) for od in ods],
-        		'u': u.tolist(),
+        		'u': u.tolist()[0],
         		'z': [str(z) for z in self.z]}
         log_str = json.dumps(dlog)
 
