@@ -40,7 +40,7 @@ function loadPlots() {
       var timestamp = parsed.timestamp * 1000.0;
       for (var j = 0; j < 8; ++j) {
         odDatum[j] = [timestamp, parsed.ods[j]];
-        dilutionDatum[j] = [timestamp, parsed.u[0][j]];
+        dilutionDatum[j] = [timestamp, parsed.u[j]];
       }
       
       odSeries.push(odDatum);
