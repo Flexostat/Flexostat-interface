@@ -275,9 +275,8 @@ class Controller(object):
         # Handle dispensing.
         try:
             with self.serpt.lock:
-                self.serpt.write("sel0;") #select media source
-#                self.serpt.flush()
-            print 'sel 0'
+                self.serpt.write("sel0;") # Select media source
+            print 'sel0;'
             sleep(0.5)
                 
             # TODO: parameterize antibacklash, now 100
@@ -296,11 +295,9 @@ class Controller(object):
                 if chamber_num == 5:
                     with self.serpt.lock:
                         self.serpt.write("clo;")
-#                        self.serpt.flush()
                     sleep(2);
                 with self.serpt.lock:
                     self.serpt.write(selstr) #select chamber
-#                    self.serpt.flush()
                 print selstr #for debug
                 sleep(1.0)  #give PV time to move, SPV needs ~100ms, servo 1s
                                 
