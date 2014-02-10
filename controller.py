@@ -68,9 +68,10 @@ class Controller(object):
         self.tx_val = []
         self.z = []
         
+        # Make sure to close all the pinch valves at startup.
         with self.serpt.lock:
+        	print 'Closing all valves;'
             self.serpt.write("clo;")
-            #self.serpt.flush()
 
         # Construct the timer threads that perform repeated actions.
         # TODO: make serial check period configurable.
@@ -280,27 +281,31 @@ class Controller(object):
             sleep(0.5)
                 
             # TODO: parameterize antibacklash, now 100
-            self.pump.withdraw(u.sum(axis=1) + 100)
+            amt_withdraw = u.sum(axis=1) + 100
+            overdraw = ones((u.shape[0], 1)) * 100
+            print 'withdrawing', amt_withdraw
+            self.pump.withdraw(amt_withdraw)
             self.pump.waitForPumping()
-            self.pump.dispense(ones((u.shape[0], 1)) * 100)
+            print 'dispensing overdraw', overdraw
+            self.pump.dispense(overdraw)
             self.pump.waitForPumping()
             chamber_num = 1
             
             # dispvals gets a tuple of dispense volumes for chamber_num
             for dispvals in u.transpose():
                 selstr = "sel%s;" % chamber_num
-                #if we're moving from PV1 to PV2 then close first
-                #to prevent leaks into tube 5
-                #(ie to prevent multiple valves from being oupen at once)
+                # If we're moving from PV1 to PV2 then close first
+                # to prevent leaks into tube 5; i.e. so no two are open at once
                 if chamber_num == 5:
                     with self.serpt.lock:
                         self.serpt.write("clo;")
-                    sleep(2);
+                    sleep(2)
                 with self.serpt.lock:
                     self.serpt.write(selstr) #select chamber
                 print selstr #for debug
                 sleep(1.0)  #give PV time to move, SPV needs ~100ms, servo 1s
-                                
+                
+                print 'dispensing', dispvals, 'into chamber', chamber_num
                 self.pump.dispense(dispvals)
                 self.pump.waitForPumping()
                 
