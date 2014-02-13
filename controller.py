@@ -40,11 +40,6 @@ class Controller(object):
         #self.ser_lock = cport.lock
         self.stdout_lock = threading.RLock()
         
-        # Calibration scaling the OD measurement to some reference value.
-        # i.e. scaling to values reported by a spec.
-        # TODO: This should be configurable.
-        self.odcal = 1  
-        
         # Make the pump driver as appropriate.
         self.pump = pumpdriver.Pump(cparams, logfiles, pparams, cport, pport)
         
@@ -70,7 +65,7 @@ class Controller(object):
         
         # Make sure to close all the pinch valves at startup.
         with self.serpt.lock:
-        	print 'Closing all valves;'
+            print 'Closing all valves;'
             self.serpt.write("clo;")
 
         # Construct the timer threads that perform repeated actions.
@@ -189,18 +184,17 @@ class Controller(object):
         
         blank = float(brx) / float(btx)
         measurement = float(rx) / float(tx)
-        od = log10(blank/measurement) * self.odcal
+        od = log10(blank/measurement)
         return od
         
     def controlLoop(self):
-    	"""Main loop of control.
-    	
-    	The plan
-          * get OD
-          *   if blanks are empty, then store a blank
-          * compute control value
-          * do dilution (control valves and pumps)
-    	"""
+        """Main loop of control.
+          The plan:
+            * get OD
+            *   if blanks are empty, then store a blank
+            * compute control value
+            * do dilution (control valves and pumps)
+        """
         
         with self.OD_datalock:
             tx = self.tx_val
@@ -224,11 +218,11 @@ class Controller(object):
                 self.tx_blank = tx
                 
                 with open(self.blank_filename, 'w') as bf:
-					# Interleave tx and rx  
-					flat_blank = [str(j) for i in zip(self.tx_blank, self.rx_blank)
-								  for j in i];
-					bfstring = ' '.join(flat_blank)
-					bf.write('%s\n' % bfstring)
+                    # Interleave tx and rx  
+                    flat_blank = [str(j) for i in zip(self.tx_blank, self.rx_blank)
+                        for j in i];
+                    bfstring = ' '.join(flat_blank)
+                    bf.write('%s\n' % bfstring)
                 
             # Setup z when blanking
             self.z = [None] * len(self.rx_blank)  
@@ -256,19 +250,19 @@ class Controller(object):
             for ee in exvals:
                 u[:,ee-1] = u[:,ee-1]+11
         except:
-        	pass
-        	            
+            pass
+
         # Log events
         print 'Logging data.'
         time_secs = int(round(time()))
         dlog = {'timestamp': time_secs,
-        		'ods': [round(od, 4) for od in ods],
-        		'u': u.tolist()[0],
-        		'z': [str(z) for z in self.z]}
+                'ods': [round(od, 4) for od in ods],
+                'u': u.tolist()[0],
+                'z': [str(z) for z in self.z]}
         log_str = json.dumps(dlog)
 
         with open(self.logfiles['fulllog'], 'a') as f:
-        	f.write('%s\n' % log_str)
+            f.write('%s\n' % log_str)
         
         with self.stdout_lock:
             print log_str
