@@ -204,7 +204,6 @@ class Controller(object):
             # Have no measurements yet
             return
         
-        # TODO: do we need to lock writing blanks?
         if len(self.tx_blank) == 0 or len(self.rx_blank) == 0:
             try:
                 # TODO: Make this parsing a helper.
