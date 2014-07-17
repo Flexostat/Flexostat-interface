@@ -74,6 +74,7 @@ class Pump(object):
             self._pumpGetResponse()
             pump.write("RUN\r")
             self._pumpGetResponse()
+            print "WDR %s" % u
     
     def dispense(self, volume):
         pump = self.pport
@@ -85,6 +86,7 @@ class Pump(object):
             self._pumpGetResponse()
             pump.write("RUN\r")
             self._pumpGetResponse()
+            print "INF %s" % u
             
     def waitForPumping(self):
         pump = self.pport
