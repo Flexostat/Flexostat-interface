@@ -117,7 +117,8 @@ class Controller(object):
         data = map(int, line.split())
         
         # Data line format: tx1 rx1 tx2 rx2 
-        # TODO: can keep the logfiles open in append mode, no?
+        #TODO: file can stay open in append mode if I can figure out 
+        #      how to guarentee they're allowed to be shared.
         f = open(self.logfiles['odlog'], 'a')
         time_str = str(int(round(time())))
         str_data = map(str, data)
@@ -129,8 +130,6 @@ class Controller(object):
             print output_s
 
         # Store the reported data locally.
-        # Should this be threadsafe?????
-        # Yes. It should be.
         with self.OD_datalock:
             self.tx_val = data[0::2]
             self.rx_val = data[1::2]
