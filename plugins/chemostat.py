@@ -1,9 +1,8 @@
 from numpy import array
-from random import randint
 
 #
 #
-#  Example mixture controller with random output.  
+#  Example: A simple chemostat with that pumps 75units/min.  
 #
 #
 #
