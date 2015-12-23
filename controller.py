@@ -5,7 +5,6 @@ from time import time, sleep
 
 import json
 import threading
-import wx
 import sys
 import serial
 import traceback
@@ -146,11 +145,8 @@ class Controller(object):
                 with self.stdout_lock:
                     print 'setpont: ' + line
             else:
-                try:
-                    wx.MessageBox(line, 'Command Response')
-                except:
-                    with self.stdout_lock:
-                        print 'Command Response: ' + line
+                with self.stdout_lock:
+                    print 'Command Response: ' + line
             return
         
         # First character is not alphabetical - reporting OD.
