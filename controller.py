@@ -67,13 +67,13 @@ class Controller(object):
             print 'Closing all valves;'
             self.serpt.write("clo;")
 
-		    # Construct the timer threads that perform repeated actions.
+        # Construct the timer threads that perform repeated actions.
         # TODO: make serial check period configurable.
         self.start_time = None  # Set on call to start()
         control_period = int(cparams['period'])
         self.cont_timer = mytimer(control_period, self.controlLoop)        
         self.ser_timer = mytimer(2, self.serialCheck)
-	    
+        
     def start(self):
         """Starts the controller.
         
