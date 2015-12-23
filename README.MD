@@ -1,7 +1,7 @@
 Servostat-interface
 ============
 
-This is the python software for the klavins lab turbidostot (see http://depts.washington.edu/soslab for details)
+This is the python software for the klavins lab turbidostot (see http://klavinslab.org/hardware for details)
 
 Requirements
 ------------
