@@ -269,17 +269,27 @@ class Controller(object):
             sleep(0.5)
                 
             # TODO: parameterize antibacklash, now 100
-            amt_withdraw = u.sum(axis=1) + 100
-            overdraw = ones((u.shape[0], 1)) * 100
-            print 'withdrawing', amt_withdraw
-            self.pump.withdraw(amt_withdraw)
-            self.pump.waitForPumping()
-            print 'dispensing overdraw', overdraw
+            overdraw_volume = 100
+            overdraw = ones((u.shape[0], 1)) * overdraw_volume
+            if self.pparams['roundingfix'].lower() != 'true':
+                amt_withdraw = u.sum(axis=1) + overdraw_volume
+                self.pump.withdraw(amt_withdraw)
+                self.pump.waitForPumping()
+            else:
+                #withdraw each volume sepparately so when we dispense sepparetly
+                # the rounding errors cancel out
+                for amt_withdraw in u.transpose():
+                    self.pump.withdraw(amt_withdraw)
+                    self.pump.waitForPumping()
+                #withdraw some extra to take care of backlash
+                self.pump.withdraw(overdraw)
+                self.pump.waitForPumping()
+
             self.pump.dispense(overdraw)
             self.pump.waitForPumping()
-            chamber_num = 1
-            
+
             # dispvals gets a tuple of dispense volumes for chamber_num
+            chamber_num = 1
             for dispvals in u.transpose():
                 selstr = "sel%s;" % chamber_num
                 # If we're moving from PV1 to PV2 then close first
