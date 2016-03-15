@@ -263,44 +263,13 @@ class Controller(object):
         
         # Handle dispensing.
         try:
-            with self.serpt.lock:
-                self.serpt.write("sel0;") # Select media source
-            print 'sel0;'
-            sleep(0.5)
-                
-            # TODO: parameterize antibacklash, now 100
-            overdraw_volume = 100
-            overdraw = ones((u.shape[0], 1)) * overdraw_volume
-            if self.pparams['roundingfix'].lower() != 'true':
-                amt_withdraw = u.sum(axis=1) + overdraw_volume
-                self.pump.withdraw(amt_withdraw)
-                self.pump.waitForPumping()
-            else:
-                #withdraw each volume sepparately so when we dispense sepparetly
-                # the rounding errors cancel out
-                for amt_withdraw in u.transpose():
-                    self.pump.withdraw(amt_withdraw)
-                    self.pump.waitForPumping()
-                #withdraw some extra to take care of backlash
-                self.pump.withdraw(overdraw)
-                self.pump.waitForPumping()
-
-            self.pump.dispense(overdraw)
-            self.pump.waitForPumping()
 
             # dispvals gets a tuple of dispense volumes for chamber_num
             chamber_num = 1
             for dispvals in u.transpose():
-                selstr = "sel%s;" % chamber_num
                 # If we're moving from PV1 to PV2 then close first
                 # to prevent leaks into tube 5; i.e. so no two are open at once
-                if chamber_num == 5:
-                    with self.serpt.lock:
-                        self.serpt.write("clo;")
-                    sleep(2)
-                with self.serpt.lock:
-                    self.serpt.write(selstr) #select chamber
-                print selstr #for debug
+                self.pump.select(chamber_num)
                 sleep(1.0)  #give PV time to move, SPV needs ~100ms, servo 1s
                 
                 print 'dispensing', dispvals, 'into chamber', chamber_num
