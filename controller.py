@@ -273,7 +273,6 @@ class Controller(object):
                 sleep(1.0)  #give PV time to move, SPV needs ~100ms, servo 1s
                 
                 print 'dispensing', dispvals, 'into chamber', chamber_num
-                self.pump.select(chamber_num)
                 self.pump.dispense(dispvals)
                 self.pump.waitForPumping()
                 

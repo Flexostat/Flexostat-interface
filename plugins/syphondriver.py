@@ -55,7 +55,7 @@ class Pump:
         """
         with self.serpt.lock:
             self.serpt.write('pul'+str(self.chamber)+str(int(volume[0])) )
-        self._actionComplete = time() +0.02+volume[0] + 1
+        self._actionComplete = time() +0.02*volume[0] + 1
         
     def waitForPumping(self):
         """ Block until pumping is done
