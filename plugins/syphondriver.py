@@ -54,7 +54,7 @@ class Pump:
             volume should be a numpy array of dimension 1
         """
         with self.serpt.lock:
-            if self.cparams['pulsebugworkaround'].lower() == 'true':
+            if self.pparams['pulsebugworkaround'].lower() == 'true':
                 command_str ='pul'+str(int(self.chamber*(2**10)+volume[0]))+";"
             else:
                 command_str ='pul'+str(int(self.chamber*(1000)+volume[0]))+";"
