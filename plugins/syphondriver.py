@@ -54,7 +54,11 @@ class Pump:
             volume should be a numpy array of dimension 1
         """
         with self.serpt.lock:
-            self.serpt.write('pul'+str(self.chamber)+str(int(volume[0]))+";" )
+            if self.cparams['pulsebugworkaround'].lower() == 'true':
+                command_str ='pul'+str(int(self.chamber*(2**10)+volume[0]))+";"
+            else:
+                command_str ='pul'+str(int(self.chamber*(1000)+volume[0]))+";"
+            self.serpt.write(command_str)
         self._actionComplete = time() +0.02*volume[0] + 1
         
     def waitForPumping(self):
