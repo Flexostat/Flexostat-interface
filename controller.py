@@ -174,7 +174,7 @@ class Controller(object):
         # NOTE: later versions of this code should probably return None or
         #       throw an exception since the error should probably be handled
         #       by code higher up in the call stack.
-        if tx == 0 or rx == 0:
+        if tx == 0 or rx == 0 or brx == 0 or btx == 0:
             return 0
         
         blank = float(brx) / float(btx)
