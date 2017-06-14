@@ -20,6 +20,13 @@ Configuration
 
 For now see the official turbidostat page.
 
+Starting
+--------
+The entry point for the program is in servostat.py.  To run open a terminal/command window and type 
+
+    python servostat.py
+
+from this directory.
 
 Known issues
 -------------
