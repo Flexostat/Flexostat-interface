@@ -18,6 +18,10 @@ class Pump(object):
         self.cparams = cparams # All controller parameters live here
         self.pport = pport
         self.last_stop = 0
+        try:
+          self.off_delay = self.pparams[]
+        except KeyError:
+          self.off_delay = 1.0
 
         if pport is not None and pport.isOpen():
             self.pport.setRTS(0)
@@ -36,5 +40,5 @@ class Pump(object):
         self.last_stop = time()
 
     def waitForPumping(self):
-        if time()-self.last_stop > 0:
-            sleep(time()-self.last_stop)
+        if (self.last_stop+off_delay)-time() > 0:
+            sleep((self.last_stop+off_delay)-time())
