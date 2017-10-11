@@ -19,7 +19,7 @@ class Pump(object):
         self.pport = pport
         self.last_stop = 0
         try:
-          self.off_delay = self.pparams[]
+          self.off_delay = self.pparams["offdelay"]
         except KeyError:
           self.off_delay = 1.0
 
